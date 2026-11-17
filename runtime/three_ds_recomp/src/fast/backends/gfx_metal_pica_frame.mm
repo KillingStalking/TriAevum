@@ -81,13 +81,75 @@ MTL::RenderCommandEncoder* GfxMetalPicaFrame::Encoder() const {
     return mEncoder;
 }
 
+MTL::CommandBuffer* GfxMetalPicaFrame::CommandBuffer() const {
+    return mCommandBuffer;
+}
+
+bool GfxMetalPicaFrame::EndEncoding(std::string* error) {
+    if (error != nullptr) {
+        error->clear();
+    }
+    if (!IsActive() || mEncoder == nullptr) {
+        if (error != nullptr) {
+            *error = "Metal PICA frame has no active render encoder to end";
+        }
+        return false;
+    }
+    mEncoder->endEncoding();
+    mEncoder = nullptr;
+    return true;
+}
+
+bool GfxMetalPicaFrame::BeginDrawablePass(
+    GfxMetalPicaClearColor clearColor,
+    bool clear,
+    std::string* error) {
+    if (error != nullptr) {
+        error->clear();
+    }
+    if (!IsActive() || mEncoder != nullptr) {
+        if (error != nullptr) {
+            *error = "Metal PICA drawable pass requires an active frame with no open encoder";
+        }
+        return false;
+    }
+
+    MTL::RenderPassDescriptor* renderPass =
+        MTL::RenderPassDescriptor::renderPassDescriptor();
+    if (renderPass == nullptr) {
+        if (error != nullptr) {
+            *error = "Metal could not allocate the drawable presentation pass";
+        }
+        return false;
+    }
+    MTL::RenderPassColorAttachmentDescriptor* colorAttachment =
+        renderPass->colorAttachments()->object(0);
+    colorAttachment->setTexture(mDrawable->texture());
+    colorAttachment->setLoadAction(
+        clear ? MTL::LoadActionClear : MTL::LoadActionLoad);
+    colorAttachment->setStoreAction(MTL::StoreActionStore);
+    if (clear) {
+        colorAttachment->setClearColor(MTL::ClearColor::Make(
+            clearColor.Red, clearColor.Green, clearColor.Blue, clearColor.Alpha));
+    }
+
+    mEncoder = mCommandBuffer->renderCommandEncoder(renderPass);
+    if (mEncoder == nullptr) {
+        if (error != nullptr) {
+            *error = "Metal could not create the drawable presentation encoder";
+        }
+        return false;
+    }
+    return true;
+}
+
 bool GfxMetalPicaFrame::EndAndPresent(std::string* error) {
     if (error != nullptr) {
         error->clear();
     }
-    if (!IsActive()) {
+    if (!IsActive() || mEncoder == nullptr) {
         if (error != nullptr) {
-            *error = "Metal PICA frame is not active";
+            *error = "Metal PICA frame has no active drawable encoder to present";
         }
         return false;
     }
@@ -119,8 +181,11 @@ void GfxMetalPicaFrame::Cancel() {
 bool GfxMetalPicaFrame::IsActive() const {
     return mAutoreleasePool != nullptr &&
            mDrawable != nullptr &&
-           mCommandBuffer != nullptr &&
-           mEncoder != nullptr;
+           mCommandBuffer != nullptr;
+}
+
+bool GfxMetalPicaFrame::HasActiveEncoder() const {
+    return mEncoder != nullptr;
 }
 
 } // namespace Fast::Backends
