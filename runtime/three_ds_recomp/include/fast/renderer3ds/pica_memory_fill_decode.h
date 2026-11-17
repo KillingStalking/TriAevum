@@ -16,34 +16,26 @@ struct PicaMemoryFillDepthStencil {
     uint8_t Stencil = 0U;
 };
 
-[[nodiscard]] constexpr uint32_t PicaColorBytesPerPixel(
-    uint8_t nativeFormat) noexcept {
+[[nodiscard]] constexpr uint32_t PicaColorBytesPerPixel(uint8_t nativeFormat) noexcept {
     return nativeFormat == 0U ? 4U : (nativeFormat == 1U ? 3U : 2U);
 }
 
-[[nodiscard]] constexpr uint32_t PicaDepthBytesPerPixel(
-    uint8_t nativeFormat) noexcept {
+[[nodiscard]] constexpr uint32_t PicaDepthBytesPerPixel(uint8_t nativeFormat) noexcept {
     return nativeFormat == 0U ? 2U : (nativeFormat == 2U ? 3U : 4U);
 }
 
-[[nodiscard]] constexpr uint32_t PicaMemoryFillElementSize(
-    uint16_t control) noexcept {
-    return (control & (1U << 9U)) != 0U
-        ? 4U
-        : ((control & (1U << 8U)) != 0U ? 3U : 2U);
+[[nodiscard]] constexpr uint32_t PicaMemoryFillElementSize(uint16_t control) noexcept {
+    return (control & (1U << 9U)) != 0U ? 4U : ((control & (1U << 8U)) != 0U ? 3U : 2U);
 }
 
-[[nodiscard]] inline uint8_t PicaMemoryFillByte(
-    const PicaMemoryFillView& fill,
-    uint32_t index) noexcept {
+[[nodiscard]] inline uint8_t PicaMemoryFillByte(const PicaMemoryFillView& fill, uint32_t index) noexcept {
     const uint32_t shift =
         (index % PicaMemoryFillElementSize(fill.Control)) * 8U;
     return static_cast<uint8_t>(fill.Value >> shift);
 }
 
 [[nodiscard]] inline PicaMemoryFillColor DecodePicaMemoryFillColor(
-    const PicaMemoryFillView& fill,
-    uint8_t nativeFormat) noexcept {
+    const PicaMemoryFillView& fill, uint8_t nativeFormat) noexcept {
     const uint8_t b0 = PicaMemoryFillByte(fill, 0U);
     const uint8_t b1 = PicaMemoryFillByte(fill, 1U);
     const uint8_t b2 = PicaMemoryFillByte(fill, 2U);
@@ -62,8 +54,7 @@ struct PicaMemoryFillDepthStencil {
             unorm(b2, 0xFFU), unorm(b1, 0xFFU),
             unorm(b0, 0xFFU), 1.0F};
     } else {
-        const uint16_t packed = static_cast<uint16_t>(b0) |
-            static_cast<uint16_t>(b1) << 8U;
+        const uint16_t packed = static_cast<uint16_t>(b0) | static_cast<uint16_t>(b1) << 8U;
         if (nativeFormat == 2U) {
             result.Value = {
                 unorm((packed >> 11U) & 0x1FU, 0x1FU),
@@ -86,22 +77,15 @@ struct PicaMemoryFillDepthStencil {
     return result;
 }
 
-[[nodiscard]] inline PicaMemoryFillDepthStencil
-DecodePicaMemoryFillDepthStencil(
-    const PicaMemoryFillView& fill,
-    uint8_t nativeFormat) noexcept {
+[[nodiscard]] inline PicaMemoryFillDepthStencil DecodePicaMemoryFillDepthStencil(
+    const PicaMemoryFillView& fill, uint8_t nativeFormat) noexcept {
     const uint32_t b0 = PicaMemoryFillByte(fill, 0U);
     const uint32_t b1 = PicaMemoryFillByte(fill, 1U);
     const uint32_t b2 = PicaMemoryFillByte(fill, 2U);
-    const uint32_t depth = nativeFormat == 0U
-        ? b0 | (b1 << 8U)
-        : b0 | (b1 << 8U) | (b2 << 16U);
-    const uint32_t maximum =
-        nativeFormat == 0U ? 0xFFFFU : 0xFFFFFFU;
-    return {
-        static_cast<float>(depth) / static_cast<float>(maximum),
-        static_cast<uint8_t>(
-            nativeFormat == 3U ? PicaMemoryFillByte(fill, 3U) : 0U)};
+    const uint32_t depth = nativeFormat == 0U ? b0 | (b1 << 8U) : b0 | (b1 << 8U) | (b2 << 16U);
+    const uint32_t maximum = nativeFormat == 0U ? 0xFFFFU : 0xFFFFFFU;
+    return {static_cast<float>(depth) / static_cast<float>(maximum),
+            static_cast<uint8_t>(nativeFormat == 3U ? PicaMemoryFillByte(fill, 3U) : 0U)};
 }
 
 } // namespace Fast::Renderer3ds
