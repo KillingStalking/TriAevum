@@ -1,5 +1,6 @@
 #pragma once
 
+#include <compare>
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -9,6 +10,7 @@
 
 #include "fast/backends/gfx_metal_pica_device.h"
 #include "fast/backends/gfx_metal_pica_shader.h"
+#include "fast/backends/gfx_metal_pica_pipeline.h"
 #include "fast/renderer3ds/pica_msl_shader.h"
 #include "fast/backends/gfx_metal_pica_render_target_cache.h"
 #include "fast/backends/gfx_metal_pica_texture_cache.h"
@@ -57,8 +59,35 @@ class GfxMetalPicaDrawExecutor {
         std::string* error);
 
     void PruneShaderCache();
+    [[nodiscard]] GfxMetalPicaPipeline* ResolvePipeline(
+        GfxMetalPicaDevice& device,
+        MTL::VertexDescriptor* vertexDescriptor,
+        const Renderer3ds::PicaDrawView& draw,
+        uint32_t colorPixelFormat,
+        uint32_t depthPixelFormat,
+        std::unique_ptr<GfxMetalPicaPipeline>& transient,
+        std::string* error);
+    void PrunePipelineCache();
+
+    struct PipelineKey {
+        uint64_t CanonicalPipelineId = 0;
+        uint64_t CanonicalVertexProgramId = 0;
+        uint64_t CanonicalFragmentProgramId = 0;
+        uint64_t VertexShaderKey = 0;
+        uint64_t FragmentShaderKey = 0;
+        uintptr_t DeviceIdentity = 0;
+        uint32_t ColorPixelFormat = 0;
+        uint32_t DepthPixelFormat = 0;
+
+        auto operator<=>(const PipelineKey&) const = default;
+    };
+    struct CachedPipeline {
+        std::unique_ptr<GfxMetalPicaPipeline> Pipeline;
+        uint64_t LastUsed = 0;
+    };
 
     std::map<std::string, CachedShader> mShaderCache;
+    std::map<PipelineKey, CachedPipeline> mPipelineCache;
     uint64_t mShaderCacheClock = 0;
 };
 
