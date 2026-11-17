@@ -153,7 +153,6 @@ bool GfxMetalPicaDisplayTransferCache::Submit(
     }
     if (commandBuffer == nullptr || source == nullptr ||
         transfer.OutputPhysicalAddress == 0U ||
-        transfer.RenderTargetNamespace == 0U ||
         !plan.SamplingFitsSource() ||
         source->width() < plan.SourceWidth ||
         source->height() < plan.SourceHeight ||
@@ -249,9 +248,5 @@ size_t GfxMetalPicaDisplayTransferCache::ResidentBytes() const {
     return mResidentBytes;
 }
 
-void GfxMetalPicaDisplayTransferCache::PruneToBudget() {
-    // Display images are externally addressable by guest physical identity.
-    // No eviction is safe until the runtime supplies explicit retirement.
-}
 
 } // namespace Fast::Backends
