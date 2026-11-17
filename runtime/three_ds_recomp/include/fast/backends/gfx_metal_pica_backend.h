@@ -4,6 +4,7 @@
 #include <string>
 
 #include "fast/backends/gfx_metal_pica_device.h"
+#include "fast/backends/gfx_metal_pica_display_transfer.h"
 #include "fast/backends/gfx_metal_pica_draw_executor.h"
 #include "fast/backends/gfx_metal_pica_render_target_cache.h"
 #include "fast/backends/gfx_metal_pica_texture_cache.h"
@@ -56,11 +57,15 @@ class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend {
     [[nodiscard]] bool IsReady() const;
     [[nodiscard]] bool HasActiveFrame() const;
     [[nodiscard]] GfxMetalPicaDevice& Device();
+    [[nodiscard]] MTL::Texture* FindDisplayTexture(
+        uint64_t renderTargetNamespace,
+        uint32_t outputPhysicalAddress) const;
 
   private:
     GfxMetalPicaDevice mDevice;
     GfxMetalPicaTextureCache mTextureCache;
     GfxMetalPicaRenderTargetCache mRenderTargetCache;
+    GfxMetalPicaDisplayTransferCache mDisplayTransferCache;
     GfxMetalPicaDrawExecutor mDrawExecutor;
     MTL::CommandBuffer* mCommandBuffer = nullptr;
     uint64_t mFrameIndex = 0;
