@@ -74,7 +74,12 @@ GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::Resolve(
         (metalDepthPixelFormat != 0U &&
          draw.FramebufferDepthPhysicalAddress == 0U) ||
         (needsDepth && metalDepthPixelFormat == 0U) ||
-        (draw.Stencil.Enabled != (metalStencilPixelFormat != 0U))) {
+        (draw.Stencil.Enabled && draw.FramebufferDepthFormat != 3U) ||
+        (draw.FramebufferDepthFormat == 3U &&
+         (metalDepthPixelFormat == 0U ||
+          metalStencilPixelFormat != metalDepthPixelFormat)) ||
+        (draw.FramebufferDepthFormat != 3U &&
+         metalStencilPixelFormat != 0U)) {
         SetError(error, "PICA Metal render-target identity or extent is invalid");
         return nullptr;
     }
