@@ -206,6 +206,11 @@ size_t GfxMetalPicaDrawExecutor::CachedPipelineCount() const {
     return mPipelineCache.size();
 }
 
+void GfxMetalPicaDrawExecutor::ClearCaches() {
+    ClearPipelineCache();
+    ClearShaderCache();
+}
+
 void GfxMetalPicaDrawExecutor::ClearShaderCache() {
     mShaderCache.clear();
     mShaderCacheClock = 0;
