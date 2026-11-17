@@ -146,7 +146,8 @@ def main() -> int:
             "ColorPhysicalAddress" in metal_render_target_cache and
             "needsDepth" in metal_render_target_cache and
             "FramebufferDepthPhysicalAddress == 0U" in metal_render_target_cache and
-            "draw.Stencil.Enabled != (metalStencilPixelFormat != 0U)" in metal_render_target_cache and
+            "draw.Stencil.Enabled && draw.FramebufferDepthFormat != 3U" in metal_render_target_cache and
+            "metalStencilPixelFormat != metalDepthPixelFormat" in metal_render_target_cache and
             "kDefaultBudgetBytes = 192U * 1024U * 1024U" in metal_render_target_cache_header and
             "LastUsedFrame" in metal_render_target_cache and
             "IsActive()" in metal_render_target_cache,
