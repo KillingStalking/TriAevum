@@ -21,6 +21,70 @@ void SetError(std::string* error, std::string message) {
 
 } // namespace
 
+GfxMetalPicaDrawExecutor::CachedShader*
+GfxMetalPicaDrawExecutor::ResolveShader(
+    GfxMetalPicaDevice& device,
+    std::string_view source,
+    Renderer3ds::PicaMslShaderStage stage,
+    std::string* error) {
+    std::string key;
+    key.reserve(source.size() + 1U);
+    key.push_back(static_cast<char>(stage));
+    key.append(source.data(), source.size());
+
+    auto found = mShaderCache.find(key);
+    if (found != mShaderCache.end()) {
+        found->second.LastUsed = ++mShaderCacheClock;
+        return &found->second;
+    }
+
+    CachedShader entry;
+    if (!Renderer3ds::TranslatePicaGlslToMsl(
+            source, stage, entry.Artifact, error)) {
+        return nullptr;
+    }
+    entry.Shader = std::make_unique<GfxMetalPicaShader>();
+    if (!entry.Shader->Compile(device.Device(), entry.Artifact, error)) {
+        return nullptr;
+    }
+    entry.LastUsed = ++mShaderCacheClock;
+    auto [inserted, wasInserted] =
+        mShaderCache.emplace(std::move(key), std::move(entry));
+    if (!wasInserted) {
+        SetError(error, "Metal PICA shader cache insertion failed");
+        return nullptr;
+    }
+
+    constexpr size_t kMaximumCachedShaders = 128U;
+    while (mShaderCache.size() > kMaximumCachedShaders) {
+        auto oldest = mShaderCache.end();
+        for (auto candidate = mShaderCache.begin();
+             candidate != mShaderCache.end(); ++candidate) {
+            if (candidate == inserted) {
+                continue;
+            }
+            if (oldest == mShaderCache.end() ||
+                candidate->second.LastUsed < oldest->second.LastUsed) {
+                oldest = candidate;
+            }
+        }
+        if (oldest == mShaderCache.end()) {
+            break;
+        }
+        mShaderCache.erase(oldest);
+    }
+    return &inserted->second;
+}
+
+void GfxMetalPicaDrawExecutor::ClearShaderCache() {
+    mShaderCache.clear();
+    mShaderCacheClock = 0;
+}
+
+size_t GfxMetalPicaDrawExecutor::CachedShaderCount() const {
+    return mShaderCache.size();
+}
+
 bool GfxMetalPicaDrawExecutor::Encode(
     GfxMetalPicaDevice& device,
     GfxMetalPicaTextureCache& textureCache,
@@ -46,38 +110,24 @@ bool GfxMetalPicaDrawExecutor::Encode(
         return false;
     }
 
-    Renderer3ds::PicaMslShaderArtifact vertexArtifact;
-    if (!Renderer3ds::TranslatePicaGlslToMsl(
-            draw.VertexShaderSource,
-            Renderer3ds::PicaMslShaderStage::Vertex,
-            vertexArtifact,
-            error)) {
+    CachedShader* vertexShader = ResolveShader(
+        device, draw.VertexShaderSource,
+        Renderer3ds::PicaMslShaderStage::Vertex, error);
+    if (vertexShader == nullptr) {
         return false;
     }
-
-    Renderer3ds::PicaMslShaderArtifact fragmentArtifact;
-    if (!Renderer3ds::TranslatePicaGlslToMsl(
-            draw.FragmentShaderSource,
-            Renderer3ds::PicaMslShaderStage::Fragment,
-            fragmentArtifact,
-            error)) {
-        return false;
-    }
-
-    GfxMetalPicaShader vertexShader;
-    if (!vertexShader.Compile(device.Device(), vertexArtifact, error)) {
-        return false;
-    }
-    GfxMetalPicaShader fragmentShader;
-    if (!fragmentShader.Compile(device.Device(), fragmentArtifact, error)) {
+    CachedShader* fragmentShader = ResolveShader(
+        device, draw.FragmentShaderSource,
+        Renderer3ds::PicaMslShaderStage::Fragment, error);
+    if (fragmentShader == nullptr) {
         return false;
     }
 
     GfxMetalPicaDrawResources resources;
     if (!resources.Prepare(
             device, textureCache, draw,
-            vertexArtifact, vertexShader.Function(),
-            fragmentArtifact, fragmentShader.Function(),
+            vertexShader->Artifact, vertexShader->Shader->Function(),
+            fragmentShader->Artifact, fragmentShader->Shader->Function(),
             error)) {
         return false;
     }
@@ -90,8 +140,8 @@ bool GfxMetalPicaDrawExecutor::Encode(
     GfxMetalPicaPipeline pipeline;
     if (!pipeline.Create(
             device.Device(),
-            vertexShader.Function(),
-            fragmentShader.Function(),
+            vertexShader->Shader->Function(),
+            fragmentShader->Shader->Function(),
             vertexDescriptor,
             colorPixelFormat,
             depthPixelFormat,
