@@ -11,11 +11,14 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
-      - name: Install clang-format
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format-14
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned clang-format
+        run: python -m pip install clang-format==14.0.6
       - name: Run clang-format
+        env:
+          CLANG_FORMAT: clang-format
         run: |
-          ./run-clang-format.sh
+          bash ./run-clang-format.sh
           git diff --exit-code

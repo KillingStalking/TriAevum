@@ -129,6 +129,15 @@ if(MSVC)
 endif()
 source_group("renderer3ds" FILES ${Source_Files__Renderer3dsPica})
 
+# The descriptor contract is renderer-neutral and shared by Vulkan/NRI and
+# native Metal shader translation.
+add_library(renderer_3ds_pica_shader_contract STATIC
+    renderer3ds/pica_nri_shader_contract.cpp)
+add_library(ThreeDsRecomp::PicaShaderContract ALIAS
+    renderer_3ds_pica_shader_contract)
+target_compile_features(renderer_3ds_pica_shader_contract PUBLIC cxx_std_20)
+target_include_directories(renderer_3ds_pica_shader_contract PUBLIC ${INCLUDE_DIR})
+
 #=================== Reusable 3DS/PICA NRI execution ===================
 
 if(THREE_DS_RECOMP_ENABLE_VULKAN)
@@ -141,7 +150,6 @@ if(THREE_DS_RECOMP_ENABLE_VULKAN)
         renderer3ds/vulkan_device_fault.cpp
         renderer3ds/vulkan_breadcrumbs.cpp
         renderer3ds/nri_pica_upload_arena.cpp
-        renderer3ds/pica_nri_shader_contract.cpp
         renderer3ds/pica_nri_upload.cpp
         renderer3ds/pica_surface_lighting_pass.cpp
     )
@@ -157,7 +165,10 @@ if(THREE_DS_RECOMP_ENABLE_VULKAN)
         PUBLIC ENABLE_RENDERER3DS_VULKAN
         PRIVATE $<$<BOOL:${THREE_DS_RECOMP_ENABLE_NRI}>:ENABLE_RENDERER3DS_NRI>)
     target_link_libraries(renderer_3ds_nri_pica_execution
-        PUBLIC Vulkan::Vulkan PRIVATE ThreeDsRecomp::RendererExtensionCore)
+        PUBLIC Vulkan::Vulkan
+        PRIVATE
+            ThreeDsRecomp::RendererExtensionCore
+            ThreeDsRecomp::PicaShaderContract)
     if(THREE_DS_RECOMP_ENABLE_NRI)
         target_link_libraries(renderer_3ds_nri_pica_execution PRIVATE NRI)
     endif()

@@ -1,3 +1,4 @@
+build-ios-windows/
 # Cache files
 __pycache__/
 .pyc
