@@ -153,7 +153,9 @@ if(THREE_DS_RECOMP_ENABLE_VULKAN)
 	# a Vulkan SDK with shaderc on the build host (macOS uses the Khronos
 	# loader with MoltenVK as its ICD). The llvm-mingw Windows build does the
 	# same: the Vulkan SDK's shaderc_shared.dll is an MSVC-toolchain binary.
-	if(ANDROID OR APPLE OR MINGW)
+	if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+		include(cmake/dependencies/ios-vulkan.cmake)
+	elseif(ANDROID OR APPLE OR MINGW)
 		include(cmake/dependencies/android-vulkan.cmake)
 	endif()
 	find_package(Vulkan REQUIRED)
