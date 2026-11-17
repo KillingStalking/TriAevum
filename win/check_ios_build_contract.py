@@ -28,6 +28,8 @@ def main() -> int:
     metal_shader = read("runtime/three_ds_recomp/src/fast/renderer3ds/pica_msl_shader.cpp")
     metal_device = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_device.mm")
     metal_device_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_device.h")
+    metal_backend = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_backend.mm")
+    metal_backend_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_backend.h")
     metal_frame = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_frame.mm")
     metal_frame_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_frame.h")
     metal_render_target = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_render_target.mm")
@@ -114,6 +116,13 @@ def main() -> int:
     require("oot3d_metal_shader_translation" in build_driver and
             "THREE_DS_RECOMP_ENABLE_METAL_PICA=ON" in build_driver,
             "the Windows build driver compiles the Metal shader translator")
+    require("gfx_metal_pica_backend.mm" in source_runtime_cmake and
+            "class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend" in metal_backend_header and
+            "GfxMetalPicaDrawExecutor::Encode" in metal_backend and
+            "mRenderTargetCache.Clear" in metal_backend and
+            "mRenderTargetCache.SubmitMemoryFill" in metal_backend and
+            "native PICA Metal display transfers are not implemented yet" in metal_backend,
+            "the concrete Metal PICA backend owns draw, clear and memory-fill submission and fails closed for unimplemented display transfer")
     require("gfx_metal_pica_device.mm" in source_runtime_cmake and
             "GfxMetalPicaDevice::Initialize" in metal_device and
             "GfxMetalPicaDevice::WaitIdle" in metal_device and
