@@ -36,6 +36,10 @@ class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend {
     [[nodiscard]] bool BeginFrame(
         MTL::CommandBuffer* commandBuffer,
         std::string* error = nullptr);
+    [[nodiscard]] bool BeginFrame(
+        MTL::CommandBuffer* commandBuffer,
+        MTL::Texture* drawableTexture,
+        std::string* error = nullptr);
     void EndFrame();
     [[nodiscard]] bool Shutdown(std::string* error = nullptr);
 
@@ -69,6 +73,7 @@ class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend {
     GfxMetalPicaDisplayTransferCache mDisplayTransferCache;
     GfxMetalPicaDrawExecutor mDrawExecutor;
     MTL::CommandBuffer* mCommandBuffer = nullptr;
+    MTL::Texture* mDrawableTexture = nullptr;
     uint64_t mFrameIndex = 0;
 };
 
