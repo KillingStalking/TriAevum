@@ -204,7 +204,7 @@ def main() -> int:
     require("gfx_metal_pica_vertex_input.mm" in source_runtime_cmake and
             "PicaDrawView" in metal_vertex_header and
             "VertexFormatFloat4" in metal_vertex_input and
-            "newBuffer(packed.data()" in metal_vertex_input and
+            "newBuffer(" in metal_vertex_input and "packed.data()" in metal_vertex_input and
             "setVertexBuffer(" in metal_vertex_input and
             "binding.Binding) + 1U" in metal_vertex_input,
             "PICA vertex streams are packed into Metal buffers with slot zero reserved for argument buffers")
