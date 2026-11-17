@@ -6,6 +6,17 @@ endif()
 
 include(cmake/dependencies/vulkan-compiler-dependencies.cmake)
 
+# Keep the first iOS renderer milestone to the core Vulkan/NRI path. The
+# desktop upscaler SDKs and shader integrations have not been qualified for iOS.
+set(THREE_DS_RECOMP_ENABLE_NRI_UPSCALER_SDKS OFF CACHE BOOL "" FORCE)
+set(THREE_DS_RECOMP_ENABLE_NRI_NIS OFF CACHE BOOL "" FORCE)
+set(THREE_DS_RECOMP_ENABLE_DLSS_MODULE OFF CACHE BOOL "" FORCE)
+set(THREE_DS_RECOMP_ENABLE_CACAO OFF CACHE BOOL "" FORCE)
+set(THREE_DS_RECOMP_ENABLE_SSSR OFF CACHE BOOL "" FORCE)
+set(THREE_DS_RECOMP_ENABLE_IMMERSE OFF CACHE BOOL "" FORCE)
+set(THREE_DS_RECOMP_OFFER_EXPERIMENTAL_GI OFF CACHE BOOL "" FORCE)
+set(THREE_DS_RECOMP_ENABLE_BRIXELIZER_GI OFF CACHE BOOL "" FORCE)
+
 if(CMAKE_VERSION VERSION_LESS 3.28)
     message(FATAL_ERROR "iOS XCFramework selection requires CMake 3.28 or newer")
 endif()
