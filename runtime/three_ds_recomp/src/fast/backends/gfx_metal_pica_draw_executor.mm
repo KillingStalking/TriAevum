@@ -46,6 +46,35 @@ std::string BuildVertexLayoutIdentity(
     return identity;
 }
 
+std::string BuildRenderStateIdentity(
+    const Renderer3ds::PicaDrawView& draw) {
+    std::string identity;
+    const auto append = [&identity](const auto& value) {
+        identity.append(
+            reinterpret_cast<const char*>(&value), sizeof(value));
+    };
+    append(draw.ColorWriteMask);
+    append(draw.LogicOperation);
+    append(draw.Blend.Enabled);
+    append(draw.Blend.EquationRgb);
+    append(draw.Blend.EquationAlpha);
+    append(draw.Blend.SourceRgb);
+    append(draw.Blend.DestRgb);
+    append(draw.Blend.SourceAlpha);
+    append(draw.Blend.DestAlpha);
+    append(draw.DepthTestEnabled);
+    append(draw.DepthWriteEnabled);
+    append(draw.DepthCompare);
+    append(draw.Stencil.Enabled);
+    append(draw.Stencil.Compare);
+    append(draw.Stencil.CompareMask);
+    append(draw.Stencil.WriteMask);
+    append(draw.Stencil.Fail);
+    append(draw.Stencil.DepthFail);
+    append(draw.Stencil.Pass);
+    return identity;
+}
+
 } // namespace
 
 GfxMetalPicaDrawExecutor::CachedShader*
@@ -128,6 +157,7 @@ GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
             draw.VertexShaderKey,
             draw.FragmentShaderKey,
             BuildVertexLayoutIdentity(draw),
+            BuildRenderStateIdentity(draw),
             reinterpret_cast<uintptr_t>(device.Device()),
             colorPixelFormat,
             depthPixelFormat,
