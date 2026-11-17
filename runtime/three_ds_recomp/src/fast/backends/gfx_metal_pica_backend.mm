@@ -143,8 +143,32 @@ bool GfxMetalPicaBackend::SubmitPicaDisplayTransfer(
         SetError(error, "native PICA Metal display transfer submitted outside an active frame");
         return false;
     }
-    if (transfer.TextureCopyBytes != 0U || transfer.RenderTargetCapture) {
-        SetError(error, "native PICA Metal display transfer cannot yet execute ordered GPU texture-copy or render-target-capture producers");
+    if (transfer.RenderTargetCapture) {
+        if (transfer.CompletionId == 0U || transfer.InputPhysicalAddress == 0U ||
+            transfer.InputWidth == 0U || transfer.InputHeight == 0U ||
+            transfer.Present || transfer.MaterializeGuest || transfer.TextureCopyBytes != 0U) {
+            SetError(error, "native PICA Metal render-target capture has an invalid producer identity or unsupported side effect");
+            return false;
+        }
+        GfxMetalPicaRenderTarget* captureSource = mRenderTargetCache.FindColorTarget(
+            transfer.RenderTargetNamespace, transfer.InputPhysicalAddress);
+        if (captureSource == nullptr || transfer.InputWidth > captureSource->Width() ||
+            transfer.InputHeight > captureSource->Height()) {
+            SetError(error, "native PICA Metal render-target capture source is missing or too small");
+            return false;
+        }
+        if (transfer.InputWidth != captureSource->Width() ||
+            transfer.InputHeight != captureSource->Height()) {
+            SetError(error, "native PICA Metal render-target capture currently requires an exact full-target extent");
+            return false;
+        }
+        return mDisplayTransferCache.CaptureRenderTarget(
+            mDevice, mCommandBuffer, captureSource->ColorTexture(),
+            transfer.RenderTargetNamespace, transfer.CompletionId,
+            transfer.AfterDrawSubmissionId, transfer.InputPhysicalAddress, error);
+    }
+    if (transfer.TextureCopyBytes != 0U) {
+        SetError(error, "native PICA Metal raw TextureCopy still requires native-byte encoding and tiled partial-range derivation");
         return false;
     }
     if (transfer.Present && mDrawableTexture == nullptr) {
