@@ -20,6 +20,38 @@ const char* kDisplayTransferShader = R"msl(
 #include <metal_stdlib>
 using namespace metal;
 
+struct TransferState {
+    uint2 sourceExtent;
+    uint2 destinationExtent;
+    uint2 sampleCount;
+};
+
+kernel void pica_display_transfer(
+    texture2d<float, access::read> source [[texture(0)]],
+    texture2d<float, access::write> destination [[texture(1)]],
+    constant TransferState& state [[buffer(0)]],
+    uint2 gid [[thread_position_in_grid]]) {
+    if (any(gid >= state.destinationExtent)) {
+        return;
+    }
+    const uint2 origin = gid * state.sampleCount;
+    const uint2 maximum = state.sourceExtent - uint2(1);
+    float4 value = source.read(min(origin, maximum));
+    if (state.sampleCount.x == 2) {
+        value += source.read(min(origin + uint2(1, 0), maximum));
+        value *= 0.5;
+    }
+    if (state.sampleCount.y == 2) {
+        float4 lower = source.read(min(origin + uint2(0, 1), maximum));
+        if (state.sampleCount.x == 2) {
+            lower += source.read(min(origin + uint2(1, 1), maximum));
+            lower *= 0.5;
+        }
+        value = (value + lower) * 0.5;
+    }
+    destination.write(value, gid);
+}
+)msl";
 
 const char* kDisplayPresentShader = R"msl(
 #include <metal_stdlib>
