@@ -82,9 +82,10 @@ bool GfxMetalPicaPipeline::Create(
     }
     descriptor->setDepthAttachmentPixelFormat(
         static_cast<MTL::PixelFormat>(depthPixelFormat));
-    if (draw != nullptr && draw->Stencil.Enabled) {
+    if (depthPixelFormat ==
+        static_cast<uint32_t>(MTL::PixelFormatDepth32Float_Stencil8)) {
         descriptor->setStencilAttachmentPixelFormat(
-            static_cast<MTL::PixelFormat>(depthPixelFormat));
+            MTL::PixelFormatDepth32Float_Stencil8);
     }
 
     NS::Error* pipelineError = nullptr;
