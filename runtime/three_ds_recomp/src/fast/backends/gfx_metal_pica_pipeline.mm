@@ -122,7 +122,10 @@ bool GfxMetalPicaPipeline::Create(
     mColorPixelFormat = colorPixelFormat;
     mDepthPixelFormat = depthPixelFormat;
     mStencilPixelFormat =
-        draw != nullptr && draw->Stencil.Enabled ? depthPixelFormat : 0U;
+        depthPixelFormat ==
+                static_cast<uint32_t>(MTL::PixelFormatDepth32Float_Stencil8)
+            ? depthPixelFormat
+            : 0U;
     mSampleCount = sampleCount;
     pool->release();
     return true;
