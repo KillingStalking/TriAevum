@@ -138,6 +138,12 @@ endif()
 
 include(cmake/dependencies/common.cmake)
 
+# iOS adds its SDL2/Metal-cpp and ImGui Metal dependencies after the shared
+# dependency targets (notably ImGui) have been created.
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+	include(cmake/dependencies/ios.cmake)
+endif()
+
 if(CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
     include(cmake/dependencies/switch.cmake)
 endif()
