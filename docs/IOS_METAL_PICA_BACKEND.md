@@ -53,7 +53,7 @@ using the shared renderer-neutral exclusion helper; the partition keeps blend
 and stencil effects from executing more than once per retained fragment. Mode
 0 covers the full target. It verifies framebuffer extent, color/depth/stencil
 formats and sample count against the pipeline before recording commands.
-Command-buffer submission and cross-draw scheduling remain with the future renderer. `GfxMetalPicaRenderTarget`
+Command-buffer submission and cross-draw scheduling remain with the future renderer. The new `GfxMetalPicaDrawExecutor` now provides the complete single-draw orchestration boundary: translate both canonical GLSL stages to validated MSL artifacts, compile both Metal functions, prepare uniforms/textures/vertex streams, create a pipeline from the prepared vertex descriptor, resolve the compatible cached framebuffer, and encode the ordered draw. It accepts explicit Metal attachment formats so the still-missing frontend format policy cannot be guessed inside the backend. This first executor currently recompiles shaders and recreates the pipeline for each call; persistent shader/pipeline caches and renderer-level ordering are still required before it is suitable for real-time gameplay. `GfxMetalPicaRenderTarget`
 now allocates offscreen color and optional combined depth/stencil textures,
 creates render encoders on a caller-owned command buffer, and supports clear or
 load/store attachment actions. The first implementation explicitly rejects
