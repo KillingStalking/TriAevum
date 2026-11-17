@@ -60,7 +60,7 @@ always-available uber fragment program using a transient pipeline. It consumes
 a host-provided command buffer from its own Metal command queue (the host can
 acquire a drawable through `GfxMetalPicaFrame` using
 `GfxMetalPicaBackend::Device()`); the host still owns drawable acquisition,
-display transfer and presentation. The new `GfxMetalPicaDrawExecutor` now provides the complete single-draw orchestration boundary: translate both canonical GLSL stages to validated MSL artifacts, compile both Metal functions, prepare uniforms/textures/vertex streams, create a pipeline from the prepared vertex descriptor, resolve the compatible cached framebuffer, and encode the ordered draw. It provides a validated native-target format policy (RGBA8 color, Depth32Float depth, and Depth32Float_Stencil8 for native depth format 3) plus an explicit-format overload for platform capability selection. The combined stencil attachment remains allocated for format 3 even on draws that do not enable stencil testing, preserving one target identity across draws. The executor retains translated MSL artifacts and compiled Metal functions in a per-device LRU cache capped at 128 shader stages, avoiding repeated shader compilation for unchanged source. It also caches render pipeline/depth-stencil states by canonical pipeline, vertex/fragment program, raster-state, exact vertex binding/attribute layout, blend/depth/stencil state, device and attachment-format identity, capped at 256 entries; draws without canonical identities use a transient pipeline rather than risking a false cache hit. The executor is not yet selected by the title runtime, and native display transfer, composition, snapshot/restore and GPU texture-copy producer resolution remain outstanding before real-time gameplay. `GfxMetalPicaRenderTarget`
+display transfer and presentation. The new `GfxMetalPicaDrawExecutor` now provides the complete single-draw orchestration boundary: translate both canonical GLSL stages to validated MSL artifacts, compile both Metal functions, prepare uniforms/textures/vertex streams, create a pipeline from the prepared vertex descriptor, resolve the compatible cached framebuffer, and encode the ordered draw. It provides a validated native-target format policy (RGBA8 color, Depth32Float depth, and Depth32Float_Stencil8 for native depth format 3) plus an explicit-format overload for platform capability selection. The combined stencil attachment remains allocated for format 3 even on draws that do not enable stencil testing, preserving one target identity across draws. The executor retains translated MSL artifacts and compiled Metal functions in a per-device LRU cache capped at 128 shader stages, avoiding repeated shader compilation for unchanged source. It also caches render pipeline/depth-stencil states by canonical pipeline, vertex/fragment program, raster-state, exact vertex binding/attribute layout, blend/depth/stencil state, device and attachment-format identity, capped at 256 entries; draws without canonical identities use a transient pipeline rather than risking a false cache hit. The executor is not yet selected by the title runtime, and screen presentation, guest-memory materialization, snapshot/restore and GPU texture-copy producer resolution remain outstanding before real-time gameplay. `GfxMetalPicaRenderTarget`
 now allocates offscreen color and optional combined depth/stencil textures,
 creates render encoders on a caller-owned command buffer, and supports clear or
 load/store attachment actions with caller-supplied clear values. The target
@@ -70,8 +70,7 @@ checked against guest physical byte ranges, and color/depth/stencil values are
 decoded by the renderer-neutral `pica_memory_fill_decode.h` shared with
 Vulkan. `GfxMetalPicaBackend` routes the public
 `PicaRenderBackend::ClearPicaRenderTarget` and `SubmitPicaMemoryFill` entry
-points into these ordered operations. Display transfer still returns an
-explicit unsupported error rather than presenting stale or incomplete output.
+points into these ordered operations. The backend now executes the renderer-neutral display-transfer plan as a native Metal compute pass for non-presenting GPU-to-GPU transfers: it resolves the source framebuffer by namespace/address, applies the validated crop and 2:1 box-filter sample plan, and retains the resulting RGBA8 display image by guest output identity. `FindDisplayTexture` exposes that image to a future compositor. The path deliberately rejects presenting transfers until the host passes its active drawable, rejects GPU TextureCopy/render-target-capture producers, and rejects guest-visible materialization until asynchronous readback and physical-memory commit are implemented; it therefore does not yet produce a visible game frame.
 The first implementation explicitly rejects multisampling and requires
 depth/stencil to share one compatible Metal format. A stage-specific argument-buffer binder
 now allocates an MTL argument buffer from the translated function, validates
@@ -152,7 +151,7 @@ The pure virtual methods declared by
 runtime/three_ds_recomp/include/fast/renderer3ds/pica_render_backend.h:
 
 - SubmitPicaDraw (implemented by GfxMetalPicaBackend)
-- SubmitPicaDisplayTransfer (not implemented; currently fails closed)
+- SubmitPicaDisplayTransfer (offscreen compute transfer is implemented for non-presenting GPU-to-GPU transfers; presentation, guest readback/commit, TextureCopy and capture remain unsupported)
 - ClearPicaRenderTarget (implemented by GfxMetalPicaBackend)
 - SubmitPicaMemoryFill (implemented by GfxMetalPicaBackend)
 
@@ -183,8 +182,9 @@ contracts and scheduling logic.
 3. Implement resource ownership first: textures, render targets, depth targets,
    staging/readback buffers, sampler state and command-buffer retirement.
 4. Complete the ordered PICA operations: draw, target clear and memory fill
-   have initial Metal implementations; display transfer remains outstanding.
-   Preserve the guest physical-memory and completion contracts.
+   have initial Metal implementations; non-presenting display transfer now has
+   a Metal compute path. Connect drawable composition, guest readback/commit,
+   TextureCopy/capture producers and completion retirement before selecting it.
 5. Implement shader identity, source generation and MSL pipeline caching.
    SPIR-V-to-MSL conversion must preserve descriptor bindings, vertex layouts,
    specialization constants and attachment formats.
