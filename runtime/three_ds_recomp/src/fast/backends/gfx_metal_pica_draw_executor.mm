@@ -243,6 +243,30 @@ bool GfxMetalPicaDrawExecutor::Encode(
     GfxMetalPicaRenderTargetCache& renderTargetCache,
     MTL::CommandBuffer* commandBuffer,
     const Renderer3ds::PicaDrawView& draw,
+    bool clearColor,
+    bool clearDepth,
+    bool clearStencil,
+    std::string* error) {
+    uint32_t colorPixelFormat = 0U;
+    uint32_t depthPixelFormat = 0U;
+    uint32_t stencilPixelFormat = 0U;
+    if (!ResolveAttachmentFormats(
+            draw, colorPixelFormat, depthPixelFormat,
+            stencilPixelFormat, error)) {
+        return false;
+    }
+    return Encode(
+        device, textureCache, renderTargetCache, commandBuffer, draw,
+        colorPixelFormat, depthPixelFormat, stencilPixelFormat,
+        clearColor, clearDepth, clearStencil, error);
+}
+
+bool GfxMetalPicaDrawExecutor::Encode(
+    GfxMetalPicaDevice& device,
+    GfxMetalPicaTextureCache& textureCache,
+    GfxMetalPicaRenderTargetCache& renderTargetCache,
+    MTL::CommandBuffer* commandBuffer,
+    const Renderer3ds::PicaDrawView& draw,
     uint32_t colorPixelFormat,
     uint32_t depthPixelFormat,
     uint32_t stencilPixelFormat,
