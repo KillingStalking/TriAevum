@@ -166,7 +166,8 @@ def main() -> int:
             "ValidateStageResources" in metal_draw_resources and
             "SetPicaUniforms" in metal_draw_resources and
             "SetNativePicaTexture" in metal_draw_resources and
-            "GfxMetalPicaVertexInput" in metal_draw_resources and
+            "mVertexInput.Create" in metal_draw_resources and
+            "mVertexInput.Bind" in metal_draw_resources and
             "EncodeDraw" in metal_draw_resources and
             "bool Prepare(" in metal_draw_resources_header,
             "a PICA draw prepares uniforms, sampled textures, argument sets and vertex/index streams with fail-closed descriptor validation")
