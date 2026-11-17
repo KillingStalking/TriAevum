@@ -2,6 +2,8 @@
 
 #include <Metal/Metal.hpp>
 
+#include <cmath>
+
 namespace Fast::Backends {
 
 bool GfxMetalPicaDrawEncoder::Encode(
@@ -49,6 +51,34 @@ bool GfxMetalPicaDrawEncoder::Encode(
         }
         return false;
     }
+
+    // PICA viewport coordinates are supplied in framebuffer pixels.
+    // Metal consumes the same pixel-space rectangle; reject missing or invalid
+    // viewport state rather than silently drawing with an undefined viewport.
+    const bool validViewport =
+        std::isfinite(draw.ViewportX) &&
+        std::isfinite(draw.ViewportY) &&
+        std::isfinite(draw.ViewportWidth) &&
+        std::isfinite(draw.ViewportHeight) &&
+        draw.ViewportWidth > 0.0F &&
+        draw.ViewportHeight > 0.0F;
+    if (!validViewport) {
+        target.End();
+        if (error != nullptr) {
+            *error = "PICA Metal draw has an invalid or empty framebuffer viewport";
+        }
+        return false;
+    }
+
+    const MTL::Viewport viewport{
+        static_cast<double>(draw.ViewportX),
+        static_cast<double>(draw.ViewportY),
+        static_cast<double>(draw.ViewportWidth),
+        static_cast<double>(draw.ViewportHeight),
+        0.0,
+        1.0,
+    };
+    encoder->setViewport(viewport);
 
     const bool encoded = resources.EncodeDraw(encoder, error);
     target.End();
