@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "fast/backends/gfx_metal_pica_device.h"
 #include "fast/backends/gfx_metal_pica_render_target.h"
@@ -43,6 +44,12 @@ class GfxMetalPicaRenderTargetCache {
         uint32_t metalColorPixelFormat,
         uint32_t metalDepthPixelFormat,
         uint32_t metalStencilPixelFormat,
+        MTL::CommandBuffer* commandBuffer,
+        std::string* error = nullptr);
+
+    [[nodiscard]] bool SubmitMemoryFill(
+        const Renderer3ds::PicaMemoryFillView& fill,
+        MTL::CommandBuffer* commandBuffer,
         std::string* error = nullptr);
 
     [[nodiscard]] size_t EntryCount() const;
@@ -72,9 +79,16 @@ class GfxMetalPicaRenderTargetCache {
         uint64_t LastUsedFrame = 0;
     };
 
+    [[nodiscard]] bool ApplyPendingMemoryFills(
+        const Key& key,
+        Entry& entry,
+        MTL::CommandBuffer* commandBuffer,
+        std::string* error);
+
     void EvictToBudget();
 
     std::map<Key, Entry> mEntries;
+    std::vector<Renderer3ds::PicaMemoryFillView> mPendingMemoryFills;
     MTL::Device* mDevice = nullptr;
     size_t mResidentBytes = 0;
     size_t mBudgetBytes = kDefaultBudgetBytes;
