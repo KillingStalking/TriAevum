@@ -78,6 +78,7 @@ class GfxMetalPicaDrawExecutor {
         uint64_t CanonicalPipelineId = 0;
         uint64_t CanonicalVertexProgramId = 0;
         uint64_t CanonicalFragmentProgramId = 0;
+        uint64_t CanonicalRasterStateId = 0;
         uint64_t VertexShaderKey = 0;
         uint64_t FragmentShaderKey = 0;
         uintptr_t DeviceIdentity = 0;
@@ -94,6 +95,7 @@ class GfxMetalPicaDrawExecutor {
     std::map<std::string, CachedShader> mShaderCache;
     std::map<PipelineKey, CachedPipeline> mPipelineCache;
     uint64_t mShaderCacheClock = 0;
+    uint64_t mPipelineCacheClock = 0;
 };
 
 } // namespace Fast::Backends
