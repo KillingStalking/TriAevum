@@ -98,6 +98,7 @@ GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
             draw.CanonicalPipelineId,
             draw.CanonicalVertexProgramId,
             draw.CanonicalFragmentProgramId,
+            draw.CanonicalRasterStateId,
             draw.VertexShaderKey,
             draw.FragmentShaderKey,
             reinterpret_cast<uintptr_t>(device.Device()),
@@ -106,7 +107,7 @@ GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
         };
         const auto found = mPipelineCache.find(key);
         if (found != mPipelineCache.end()) {
-            found->second.LastUsed = ++mShaderCacheClock;
+            found->second.LastUsed = ++mPipelineCacheClock;
             return found->second.Pipeline.get();
         }
 
@@ -127,7 +128,7 @@ GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
 
         CachedPipeline entry;
         entry.Pipeline = std::move(transient);
-        entry.LastUsed = ++mShaderCacheClock;
+        entry.LastUsed = ++mPipelineCacheClock;
         auto [inserted, wasInserted] =
             mPipelineCache.emplace(key, std::move(entry));
         if (!wasInserted) {
@@ -171,6 +172,7 @@ void GfxMetalPicaDrawExecutor::PrunePipelineCache() {
 
 void GfxMetalPicaDrawExecutor::ClearPipelineCache() {
     mPipelineCache.clear();
+    mPipelineCacheClock = 0;
 }
 
 size_t GfxMetalPicaDrawExecutor::CachedPipelineCount() const {
