@@ -52,6 +52,10 @@ class GfxMetalPicaRenderTargetCache {
         MTL::CommandBuffer* commandBuffer,
         std::string* error = nullptr);
 
+    [[nodiscard]] GfxMetalPicaRenderTarget* FindColorTarget(
+        uint64_t renderTargetNamespace,
+        uint32_t colorPhysicalAddress);
+
     [[nodiscard]] size_t EntryCount() const;
     [[nodiscard]] size_t ResidentBytes() const;
     [[nodiscard]] size_t BudgetBytes() const;
