@@ -183,6 +183,11 @@ def main() -> int:
             "DecodePicaMemoryFillDepthStencil" in metal_render_target_cache and
             "clearValues" in metal_render_target_source,
             "PICA physical framebuffer identities reuse offscreen Metal targets with frame-aware LRU residency")
+    require("overlapsColor" in metal_render_target_cache and
+            "overlapsDepth" in metal_render_target_cache and
+            "partially overlaps a framebuffer attachment" in metal_render_target_cache and
+            "if ((overlapsColor && !coversColor)" in metal_render_target_cache,
+            "Metal memory fills fail closed on partial framebuffer attachment overlap instead of silently leaving stale pixels")
     require("gfx_metal_pica_argument_buffer.mm" in source_runtime_cmake and
             "newArgumentEncoder(0)" in metal_argument_buffer and
             "setArgumentBuffer" in metal_argument_buffer and
