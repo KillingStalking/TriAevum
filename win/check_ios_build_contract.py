@@ -181,8 +181,12 @@ def main() -> int:
             "target.DepthPixelFormat() != pipeline.DepthPixelFormat()" in metal_draw_encoder and
             "target.SampleCount() != pipeline.SampleCount()" in metal_draw_encoder and
             "ColorPixelFormat() const" in metal_pipeline_header and
-            "static bool Encode(" in metal_draw_encoder_header,
-            "the ordered Metal PICA draw encoder binds a pipeline, resources and render target before drawing")
+            "static bool Encode(" in metal_draw_encoder_header and
+            "#include <cmath>" in metal_draw_encoder and
+            "std::isfinite(draw.ViewportX)" in metal_draw_encoder and
+            "draw.ViewportWidth > 0.0F" in metal_draw_encoder and
+            "encoder->setViewport(viewport)" in metal_draw_encoder,
+            "the ordered Metal PICA draw encoder binds resources and applies only finite, non-empty PICA viewport state")
     require("gfx_metal_pica_pipeline.mm" in source_runtime_cmake and
             "newRenderPipelineState" in metal_pipeline and
             "setRenderPipelineState" in metal_pipeline and
