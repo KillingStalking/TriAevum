@@ -54,8 +54,7 @@ struct PicaMemoryFillDepthStencil {
             unorm(b2, 0xFFU), unorm(b1, 0xFFU),
             unorm(b0, 0xFFU), 1.0F};
     } else {
-        const uint32_t packed =
-            static_cast<uint32_t>(b0) | (static_cast<uint32_t>(b1) << 8U);
+        const uint32_t packed = static_cast<uint32_t>(b0) | (static_cast<uint32_t>(b1) << 8U);
         if (nativeFormat == 2U) {
             result.Value = {
                 unorm((packed >> 11U) & 0x1FU, 0x1FU),
