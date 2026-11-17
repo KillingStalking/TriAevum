@@ -13,6 +13,7 @@
 namespace MTL {
 class CommandBuffer;
 class ComputePipelineState;
+class RenderPipelineState;
 class Texture;
 }
 
@@ -39,6 +40,13 @@ class GfxMetalPicaDisplayTransferCache {
         const Renderer3ds::PicaDisplayTransferView& transfer,
         const Extension::PicaDisplayTransferPlan& plan,
         std::string* error = nullptr);
+    [[nodiscard]] bool Present(
+        GfxMetalPicaDevice& device,
+        MTL::CommandBuffer* commandBuffer,
+        MTL::Texture* source,
+        MTL::Texture* drawable,
+        Renderer3ds::PicaPresentationMode mode,
+        std::string* error = nullptr);
     [[nodiscard]] MTL::Texture* Find(
         uint64_t renderTargetNamespace,
         uint32_t outputPhysicalAddress) const;
@@ -58,12 +66,18 @@ class GfxMetalPicaDisplayTransferCache {
         uint64_t LastUsedFrame = 0;
     };
 
+    [[nodiscard]] bool EnsurePresentPipeline(
+        GfxMetalPicaDevice& device,
+        uint32_t pixelFormat,
+        Renderer3ds::PicaPresentationMode mode,
+        std::string* error);
     [[nodiscard]] bool EnsurePipeline(
         GfxMetalPicaDevice& device,
         std::string* error);
 
     MTL::Device* mDevice = nullptr;
     MTL::ComputePipelineState* mPipeline = nullptr;
+    std::map<uint64_t, MTL::RenderPipelineState*> mPresentPipelines;
     std::map<Key, Entry> mEntries;
     size_t mResidentBytes = 0;
     size_t mBudgetBytes = kDefaultBudgetBytes;
