@@ -96,9 +96,30 @@ bool GfxMetalPicaBackend::SubmitPicaDraw(
         SetError(error, "native PICA Metal draw submitted outside an active frame");
         return false;
     }
+    if (!draw.FragmentShaderSource.empty()) {
+        return mDrawExecutor.Encode(
+            mDevice, mTextureCache, mRenderTargetCache,
+            mCommandBuffer, draw, error);
+    }
+    if (draw.UberFragmentShaderSource.empty()) {
+        SetError(error, "native PICA Metal draw has neither a specialized nor an uber fragment shader");
+        return false;
+    }
+
+    // The frontend may submit the always-available uber program while the
+    // specialized fragment variant is still being prepared.
+    Renderer3ds::PicaDrawView fallback = draw;
+    fallback.FragmentShaderSource = draw.UberFragmentShaderSource;
+    fallback.FragmentShaderKey = draw.UberFragmentShaderKey;
+    fallback.FragmentShaderSourceIdentity = draw.UberFragmentShaderSourceIdentity;
+    fallback.FragmentShaderHooks = draw.UberFragmentShaderHooks;
+    // The fallback program has no canonical pipeline identity shared with the
+    // specialized program; use a transient pipeline to avoid a false cache hit.
+    fallback.CanonicalPipelineId = 0U;
+    fallback.CanonicalFragmentProgramId = 0U;
     return mDrawExecutor.Encode(
         mDevice, mTextureCache, mRenderTargetCache,
-        mCommandBuffer, draw, error);
+        mCommandBuffer, fallback, error);
 }
 
 bool GfxMetalPicaBackend::SubmitPicaDisplayTransfer(
