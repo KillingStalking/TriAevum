@@ -28,6 +28,24 @@ namespace Fast::Backends {
 // submission to the owning renderer.
 class GfxMetalPicaDrawExecutor {
   public:
+    [[nodiscard]] static bool ResolveAttachmentFormats(
+        const Renderer3ds::PicaDrawView& draw,
+        uint32_t& colorPixelFormat,
+        uint32_t& depthPixelFormat,
+        uint32_t& stencilPixelFormat,
+        std::string* error = nullptr);
+
+    [[nodiscard]] bool Encode(
+        GfxMetalPicaDevice& device,
+        GfxMetalPicaTextureCache& textureCache,
+        GfxMetalPicaRenderTargetCache& renderTargetCache,
+        MTL::CommandBuffer* commandBuffer,
+        const Renderer3ds::PicaDrawView& draw,
+        bool clearColor = false,
+        bool clearDepth = false,
+        bool clearStencil = false,
+        std::string* error = nullptr);
+
     [[nodiscard]] bool Encode(
         GfxMetalPicaDevice& device,
         GfxMetalPicaTextureCache& textureCache,
