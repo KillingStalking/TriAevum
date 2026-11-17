@@ -58,6 +58,8 @@ def main() -> int:
     metal_raster_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_raster_state.h")
     vulkan_pica_internal = read("runtime/three_ds_recomp/src/fast/backends/gfx_vulkan_pica_internal.h")
     pica_msl_header = read("runtime/three_ds_recomp/include/fast/renderer3ds/pica_msl_shader.h")
+    pica_memory_fill_decode = read("runtime/three_ds_recomp/include/fast/renderer3ds/pica_memory_fill_decode.h")
+    metal_render_target_source = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_render_target.mm")
     source_runtime_cmake = read("runtime/three_ds_recomp/src/CMakeLists.txt")
     fast_cmake = read("runtime/three_ds_recomp/src/fast/CMakeLists.txt")
     build_driver = read("win/build_ios.py")
@@ -140,6 +142,13 @@ def main() -> int:
             "effectiveClearDepth" in metal_render_target and
             "ColorTexture()" in metal_render_target_header,
             "Metal owns offscreen PICA color/depth/stencil targets with explicit single-sample limits")
+    require("DecodePicaMemoryFillColor" in pica_memory_fill_decode and
+            "DecodePicaMemoryFillDepthStencil" in pica_memory_fill_decode and
+            "PicaColorBytesPerPixel" in pica_memory_fill_decode and
+            "PicaDepthBytesPerPixel" in pica_memory_fill_decode and
+            "DecodePicaMemoryFillColor" in vulkan_pica_internal and
+            "DecodePicaMemoryFillDepthStencil" in vulkan_pica_internal,
+            "PICA memory-fill decoding is shared across renderer backends")
     require("gfx_metal_pica_render_target_cache.mm" in source_runtime_cmake and
             "PicaDrawView" in metal_render_target_cache and
             "RenderTargetNamespace" in metal_render_target_cache and
@@ -153,7 +162,13 @@ def main() -> int:
             "IsActive()" in metal_render_target_cache and
             "GfxMetalPicaRenderTargetCache::Clear" in metal_render_target_cache and
             "target.Begin(" in metal_render_target_cache and
-            "target.End()" in metal_render_target_cache_header + metal_render_target_cache,
+            "target.End()" in metal_render_target_cache_header + metal_render_target_cache and
+            "SubmitMemoryFill" in metal_render_target_cache_header and
+            "mPendingMemoryFills" in metal_render_target_cache_header and
+            "ApplyPendingMemoryFills" in metal_render_target_cache and
+            "PicaColorBytesPerPixel" in metal_render_target_cache and
+            "DecodePicaMemoryFillDepthStencil" in metal_render_target_cache and
+            "clearValues" in metal_render_target_source,
             "PICA physical framebuffer identities reuse offscreen Metal targets with frame-aware LRU residency")
     require("gfx_metal_pica_argument_buffer.mm" in source_runtime_cmake and
             "newArgumentEncoder(0)" in metal_argument_buffer and
