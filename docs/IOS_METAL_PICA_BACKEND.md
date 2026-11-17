@@ -103,7 +103,10 @@ Metal minification, magnification, mip filtering and LOD clamps. It rejects
 clamp-to-border/asymmetric wrap modes until the corresponding PICA border and
 wrap state is available to the backend. `GfxMetalPicaTextureCache` adds a
 frame-aware 128 MiB default budget, content/sampler-aware identity, device
-ownership checks and LRU eviction between frames. `GfxMetalPicaDepthStencilState`
+ownership checks and LRU eviction between frames. The PICA render-target cache
+has a 192 MiB default budget but deliberately does not evict live guest
+framebuffer contents: when the budget is exhausted it rejects new targets until
+explicit retirement or snapshot support can preserve their contents. `GfxMetalPicaDepthStencilState`
 maps PICA depth compare/write and stencil compare/fail/depth-fail/pass
 operations to `MTL::DepthStencilState`; the PICA stencil configuration is
 applied to both Metal faces and its reference value is set when binding.
