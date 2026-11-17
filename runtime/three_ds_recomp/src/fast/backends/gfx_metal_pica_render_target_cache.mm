@@ -45,6 +45,7 @@ void GfxMetalPicaRenderTargetCache::SetBudgetBytes(size_t bytes) {
 
 void GfxMetalPicaRenderTargetCache::Clear() {
     mEntries.clear();
+    mPendingMemoryFills.clear();
     mDevice = nullptr;
     mResidentBytes = 0;
 }
