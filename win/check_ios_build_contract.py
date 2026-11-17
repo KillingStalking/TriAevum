@@ -201,6 +201,12 @@ def main() -> int:
             "the ordered Metal PICA draw encoder binds resources and applies only finite, non-empty PICA viewport state")
     require("gfx_metal_pica_draw_executor.mm" in source_runtime_cmake and
             "TranslatePicaGlslToMsl" in metal_draw_executor and
+            "ResolveAttachmentFormats" in metal_draw_executor_header and
+            "PixelFormatRGBA8Unorm" in metal_draw_executor and
+            "PixelFormatDepth32Float_Stencil8" in metal_draw_executor and
+            "draw.FramebufferDepthFormat == 3U" in metal_draw_executor and
+            "draw.FramebufferDepthFormat == 3U" in metal_render_target_cache and
+            "PixelFormatDepth32Float_Stencil8" in metal_pipeline and
             "mShaderCache" in metal_draw_executor_header and
             "kMaximumCachedShaders = 128U" in metal_draw_executor and
             "kMaximumCachedPipelines = 256U" in metal_draw_executor and
