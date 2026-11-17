@@ -354,16 +354,14 @@ uint8_t NativePicaFillByte(const GfxNativePicaMemoryFillView& fill, uint32_t ind
     return Renderer3ds::PicaMemoryFillByte(fill, index);
 }
 
-VkClearColorValue DecodeNativePicaClearColor(
-    const GfxNativePicaMemoryFillView& fill, uint8_t format) {
+VkClearColorValue DecodeNativePicaClearColor(const GfxNativePicaMemoryFillView& fill, uint8_t format) {
     VkClearColorValue result{};
     const auto decoded = Renderer3ds::DecodePicaMemoryFillColor(fill, format);
     std::copy(decoded.Value.begin(), decoded.Value.end(), result.float32);
     return result;
 }
 
-VkClearDepthStencilValue DecodeNativePicaClearDepthStencil(
-    const GfxNativePicaMemoryFillView& fill, uint8_t format) {
+VkClearDepthStencilValue DecodeNativePicaClearDepthStencil(const GfxNativePicaMemoryFillView& fill, uint8_t format) {
     const auto decoded = Renderer3ds::DecodePicaMemoryFillDepthStencil(fill, format);
     return {decoded.Depth, decoded.Stencil};
 }
