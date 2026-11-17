@@ -389,7 +389,7 @@ bool GfxMetalPicaDrawExecutor::Encode(
 
     GfxMetalPicaRenderTarget* target = renderTargetCache.Resolve(
         device, draw, colorPixelFormat, depthPixelFormat,
-        stencilPixelFormat, error);
+        stencilPixelFormat, commandBuffer, error);
     if (target == nullptr) {
         return false;
     }
