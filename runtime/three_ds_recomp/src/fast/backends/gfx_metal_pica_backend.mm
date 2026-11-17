@@ -2,6 +2,8 @@
 
 #include <SDL_render.h>
 
+#include <Metal/Metal.hpp>
+
 #include <cassert>
 
 namespace Fast::Backends {
@@ -40,8 +42,9 @@ bool GfxMetalPicaBackend::BeginFrame(
     if (error != nullptr) {
         error->clear();
     }
-    if (!mDevice.IsReady() || commandBuffer == nullptr || HasActiveFrame()) {
-        SetError(error, "Metal PICA frame requires a ready device, command buffer and no active frame");
+    if (!mDevice.IsReady() || commandBuffer == nullptr || HasActiveFrame() ||
+        commandBuffer->commandQueue() != mDevice.CommandQueue()) {
+        SetError(error, "Metal PICA frame requires a command buffer from the backend device queue and no active frame");
         return false;
     }
     ++mFrameIndex;
