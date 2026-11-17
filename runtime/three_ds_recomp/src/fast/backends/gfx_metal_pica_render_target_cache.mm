@@ -61,10 +61,15 @@ bool GfxMetalPicaRenderTargetCache::Clear(
         return false;
     }
 
+    bool foundTarget = false;
     for (auto& [key, entry] : mEntries) {
         if (key.RenderTargetNamespace != renderTargetNamespace ||
             key.ColorPhysicalAddress != colorPhysicalAddress) {
             continue;
+        }
+        foundTarget = true;
+        if (!ApplyPendingMemoryFills(key, entry, commandBuffer, error)) {
+            return false;
         }
         auto& target = *entry.Target;
         if (!target.Begin(
@@ -77,6 +82,17 @@ bool GfxMetalPicaRenderTargetCache::Clear(
         }
         target.End();
         entry.LastUsedFrame = mCurrentFrame;
+    }
+    if (!foundTarget) {
+        const bool hasPendingFill = std::any_of(
+            mPendingMemoryFills.begin(), mPendingMemoryFills.end(),
+            [renderTargetNamespace](const auto& fill) {
+                return fill.RenderTargetNamespace == renderTargetNamespace;
+            });
+        if (hasPendingFill) {
+            SetError(error, "PICA Metal cannot order a target clear behind an unresolved memory fill without an allocated framebuffer");
+            return false;
+        }
     }
     // A target that has not been allocated yet starts with the same transparent
     // color, default depth and zero stencil on its first draw.
