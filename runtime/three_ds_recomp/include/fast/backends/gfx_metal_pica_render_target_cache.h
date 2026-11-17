@@ -85,8 +85,6 @@ class GfxMetalPicaRenderTargetCache {
         MTL::CommandBuffer* commandBuffer,
         std::string* error);
 
-    void EvictToBudget();
-
     std::map<Key, Entry> mEntries;
     std::vector<Renderer3ds::PicaMemoryFillView> mPendingMemoryFills;
     MTL::Device* mDevice = nullptr;
