@@ -203,6 +203,10 @@ def main() -> int:
             "TranslatePicaGlslToMsl" in metal_draw_executor and
             "mShaderCache" in metal_draw_executor_header and
             "kMaximumCachedShaders = 128U" in metal_draw_executor and
+            "kMaximumCachedPipelines = 256U" in metal_draw_executor and
+            "CanonicalRasterStateId" in metal_draw_executor_header and
+            "CanonicalPipelineId" in metal_draw_executor and
+            "mPipelineCache" in metal_draw_executor_header and
             "entry.Device = device.Device()" in metal_draw_executor and
             "vertexShader->Shader->Function()" in metal_draw_executor and
             "fragmentShader->Shader->Function()" in metal_draw_executor and
