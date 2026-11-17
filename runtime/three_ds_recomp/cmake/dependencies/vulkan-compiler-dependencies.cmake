@@ -4,13 +4,17 @@
 
 include(FetchContent)
 FetchContent_Declare(android_vulkan_headers
-    URL https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.354.tar.gz)
+    URL https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.354.tar.gz
+    SOURCE_SUBDIR _download_only)
 FetchContent_Declare(android_spirv_headers
-    URL https://github.com/KhronosGroup/SPIRV-Headers/archive/ad9184e76a66b1001c29db9b0a3e87f646c64de0.tar.gz)
+    URL https://github.com/KhronosGroup/SPIRV-Headers/archive/ad9184e76a66b1001c29db9b0a3e87f646c64de0.tar.gz
+    SOURCE_SUBDIR _download_only)
 FetchContent_Declare(android_spirv_tools
-    URL https://github.com/KhronosGroup/SPIRV-Tools/archive/c1cb30bb04e2bf911755a40df1242cc6e3d83e26.tar.gz)
+    URL https://github.com/KhronosGroup/SPIRV-Tools/archive/c1cb30bb04e2bf911755a40df1242cc6e3d83e26.tar.gz
+    SOURCE_SUBDIR _download_only)
 FetchContent_Declare(android_glslang
-    URL https://github.com/KhronosGroup/glslang/archive/5ed4003a18a10a9d1bd7e43aaf1664499abffa83.tar.gz)
+    URL https://github.com/KhronosGroup/glslang/archive/5ed4003a18a10a9d1bd7e43aaf1664499abffa83.tar.gz
+    SOURCE_SUBDIR _download_only)
 FetchContent_MakeAvailable(android_vulkan_headers android_spirv_headers android_spirv_tools android_glslang)
 
 set(Vulkan_INCLUDE_DIR "${android_vulkan_headers_SOURCE_DIR}/include" CACHE PATH "Vulkan headers" FORCE)
