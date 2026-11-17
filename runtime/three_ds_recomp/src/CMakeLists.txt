@@ -80,6 +80,9 @@ if(THREE_DS_RECOMP_ENABLE_METAL_PICA)
             SDL2::SDL2-static
             ${THREE_DS_RECOMP_METAL_FRAMEWORK}
             ${THREE_DS_RECOMP_QUARTZCORE_FRAMEWORK})
+    # Compile the native Metal foundation as part of the runtime archive.
+    target_link_libraries(three_ds_recomp_runtime PRIVATE
+        oot3d_metal_shader_translation)
 endif()
 
 #=================== Legacy compatibility ===================
