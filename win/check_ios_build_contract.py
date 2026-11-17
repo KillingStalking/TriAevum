@@ -212,6 +212,8 @@ def main() -> int:
             "kMaximumCachedPipelines = 256U" in metal_draw_executor and
             "CanonicalRasterStateId" in metal_draw_executor_header and
             "CanonicalPipelineId" in metal_draw_executor and
+            "BuildVertexLayoutIdentity(draw)" in metal_draw_executor and
+            "VertexLayoutIdentity" in metal_draw_executor_header and
             "mPipelineCache" in metal_draw_executor_header and
             "entry.Device = device.Device()" in metal_draw_executor and
             "vertexShader->Shader->Function()" in metal_draw_executor and
