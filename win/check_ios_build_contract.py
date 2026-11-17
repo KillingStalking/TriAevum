@@ -185,7 +185,12 @@ def main() -> int:
             "#include <cmath>" in metal_draw_encoder and
             "std::isfinite(draw.ViewportX)" in metal_draw_encoder and
             "draw.ViewportWidth > 0.0F" in metal_draw_encoder and
-            "encoder->setViewport(viewport)" in metal_draw_encoder,
+            "encoder->setViewport(viewport)" in metal_draw_encoder and
+            "pica_exclude_scissor.h" in metal_draw_encoder and
+            "draw.ScissorMode == 3U" in metal_draw_encoder and
+            "draw.ScissorMode == 1U" in metal_draw_encoder and
+            "ExcludePicaScissor(fullTarget, excluded)" in metal_draw_encoder and
+            "encoder->setScissorRect(metalScissor)" in metal_draw_encoder,
             "the ordered Metal PICA draw encoder binds resources and applies only finite, non-empty PICA viewport state")
     require("gfx_metal_pica_pipeline.mm" in source_runtime_cmake and
             "newRenderPipelineState" in metal_pipeline and
