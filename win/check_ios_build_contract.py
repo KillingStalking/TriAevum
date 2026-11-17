@@ -54,6 +54,7 @@ def main() -> int:
     metal_depth_stencil_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_depth_stencil.h")
     metal_raster = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_raster_state.mm")
     metal_raster_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_raster_state.h")
+    vulkan_pica_internal = read("runtime/three_ds_recomp/src/fast/backends/gfx_vulkan_pica_internal.h")
     pica_msl_header = read("runtime/three_ds_recomp/include/fast/renderer3ds/pica_msl_shader.h")
     source_runtime_cmake = read("runtime/three_ds_recomp/src/CMakeLists.txt")
     fast_cmake = read("runtime/three_ds_recomp/src/fast/CMakeLists.txt")
@@ -271,6 +272,8 @@ def main() -> int:
             "NativeCullMode::KeepCounterClockwise" in metal_raster and
             "MTL::WindingClockwise" in metal_raster and
             "PICA cull mode is invalid" in metal_raster and
+            "KeepCounterClockwise ? Extension::PicaSceneFrontFace::Clockwise" in vulkan_pica_internal and
+            "cullMode == Renderer3ds::NativeCullMode::KeepCounterClockwise" in metal_raster and
             "setBlendColor" in metal_raster and
             "ConfigurePicaMetalColorAttachment" in metal_raster_header,
             "PICA blend factors/equations, write mask, culling and winding map to Metal; unsupported logic ops fail explicitly")
