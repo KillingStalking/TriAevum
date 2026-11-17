@@ -192,6 +192,10 @@ bool GfxMetalPicaDrawResources::Bind(
            mVertexInput.Bind(encoder);
 }
 
+MTL::VertexDescriptor* GfxMetalPicaDrawResources::VertexDescriptor() const {
+    return mPrepared ? mVertexInput.Descriptor() : nullptr;
+}
+
 bool GfxMetalPicaDrawResources::EncodeDraw(
     MTL::RenderCommandEncoder* encoder,
     std::string* error) const {
