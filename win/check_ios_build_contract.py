@@ -119,6 +119,7 @@ def main() -> int:
     require("gfx_metal_pica_backend.mm" in source_runtime_cmake and
             "class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend" in metal_backend_header and
             "GfxMetalPicaDrawExecutor::Encode" in metal_backend and
+            "commandBuffer->commandQueue() != mDevice.CommandQueue()" in metal_backend and
             "mRenderTargetCache.Clear" in metal_backend and
             "mRenderTargetCache.SubmitMemoryFill" in metal_backend and
             "native PICA Metal display transfers are not implemented yet" in metal_backend,
