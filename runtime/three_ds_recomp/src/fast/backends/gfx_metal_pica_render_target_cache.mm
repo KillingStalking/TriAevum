@@ -270,9 +270,12 @@ bool GfxMetalPicaRenderTargetCache::ApplyPendingMemoryFills(
 
         GfxMetalPicaRenderTargetClearValues clearValues;
         if (coversColor) {
-            clearValues.Color =
+            const auto decodedColor =
                 Renderer3ds::DecodePicaMemoryFillColor(
-                    *fill, key.NativeColorFormat).Value;
+                    *fill, key.NativeColorFormat);
+            for (size_t channel = 0; channel < clearValues.Color.size(); ++channel) {
+                clearValues.Color[channel] = decodedColor.Value[channel];
+            }
         }
         if (coversDepth) {
             const auto decoded =
