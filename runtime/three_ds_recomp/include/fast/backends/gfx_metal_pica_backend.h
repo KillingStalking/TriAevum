@@ -5,7 +5,6 @@
 
 #include "fast/backends/gfx_metal_pica_device.h"
 #include "fast/backends/gfx_metal_pica_draw_executor.h"
-#include "fast/backends/gfx_metal_pica_frame.h"
 #include "fast/backends/gfx_metal_pica_render_target_cache.h"
 #include "fast/backends/gfx_metal_pica_texture_cache.h"
 #include "fast/renderer3ds/pica_render_backend.h"
@@ -60,7 +59,6 @@ class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend {
 
   private:
     GfxMetalPicaDevice mDevice;
-    GfxMetalPicaFrame mUnusedFrame;
     GfxMetalPicaTextureCache mTextureCache;
     GfxMetalPicaRenderTargetCache mRenderTargetCache;
     GfxMetalPicaDrawExecutor mDrawExecutor;
