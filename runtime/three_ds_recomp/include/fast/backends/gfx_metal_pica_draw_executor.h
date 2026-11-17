@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -45,6 +46,7 @@ class GfxMetalPicaDrawExecutor {
     struct CachedShader {
         Renderer3ds::PicaMslShaderArtifact Artifact;
         std::unique_ptr<GfxMetalPicaShader> Shader;
+        MTL::Device* Device = nullptr;
         uint64_t LastUsed = 0;
     };
 
@@ -53,6 +55,8 @@ class GfxMetalPicaDrawExecutor {
         std::string_view source,
         Renderer3ds::PicaMslShaderStage stage,
         std::string* error);
+
+    void PruneShaderCache();
 
     std::map<std::string, CachedShader> mShaderCache;
     uint64_t mShaderCacheClock = 0;
