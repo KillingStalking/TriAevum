@@ -8,6 +8,8 @@
 
 #include <Metal/Metal.hpp>
 
+#include <utility>
+
 namespace Fast::Backends {
 namespace {
 
