@@ -81,6 +81,8 @@ void GfxMetalPicaDrawExecutor::PruneShaderCache() {
 
 GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
     GfxMetalPicaDevice& device,
+    MTL::Function* vertexFunction,
+    MTL::Function* fragmentFunction,
     MTL::VertexDescriptor* vertexDescriptor,
     const Renderer3ds::PicaDrawView& draw,
     uint32_t colorPixelFormat,
@@ -111,8 +113,8 @@ GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
         transient = std::make_unique<GfxMetalPicaPipeline>();
         if (!transient->Create(
                 device.Device(),
-                nullptr,
-                nullptr,
+                vertexFunction,
+                fragmentFunction,
                 vertexDescriptor,
                 colorPixelFormat,
                 depthPixelFormat,
@@ -138,8 +140,8 @@ GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
     transient = std::make_unique<GfxMetalPicaPipeline>();
     if (!transient->Create(
             device.Device(),
-            nullptr,
-            nullptr,
+            vertexFunction,
+            fragmentFunction,
             vertexDescriptor,
             colorPixelFormat,
             depthPixelFormat,
@@ -238,7 +240,8 @@ bool GfxMetalPicaDrawExecutor::Encode(
 
     std::unique_ptr<GfxMetalPicaPipeline> transientPipeline;
     GfxMetalPicaPipeline* pipeline = ResolvePipeline(
-        device, vertexDescriptor, draw,
+        device, vertexShader->Shader->Function(),
+        fragmentShader->Shader->Function(), vertexDescriptor, draw,
         colorPixelFormat, depthPixelFormat,
         transientPipeline, error);
     if (pipeline == nullptr) {
