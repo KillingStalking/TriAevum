@@ -2,7 +2,7 @@
 
 #include <SDL_render.h>
 
-#include <utility>
+#include <cassert>
 
 namespace Fast::Backends {
 namespace {
@@ -16,6 +16,7 @@ void SetError(std::string* error, const char* message) {
 } // namespace
 
 GfxMetalPicaBackend::~GfxMetalPicaBackend() {
+    assert(!HasActiveFrame());
     std::string ignored;
     (void)Shutdown(&ignored);
 }
@@ -51,6 +52,8 @@ bool GfxMetalPicaBackend::BeginFrame(
 }
 
 void GfxMetalPicaBackend::EndFrame() {
+    // The host owns and commits/presents this command buffer after all PICA
+    // work has been appended to it.
     mCommandBuffer = nullptr;
 }
 
