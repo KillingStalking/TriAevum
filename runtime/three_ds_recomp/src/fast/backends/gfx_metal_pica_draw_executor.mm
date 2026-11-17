@@ -20,6 +20,34 @@ void SetError(std::string* error, std::string message) {
     }
 }
 
+std::string BuildVertexLayoutIdentity(
+    const Renderer3ds::PicaDrawView& draw) {
+    std::string identity;
+    const auto append = [&identity](const auto& value) {
+        identity.append(
+            reinterpret_cast<const char*>(&value), sizeof(value));
+    };
+    const uint32_t bindingCount =
+        static_cast<uint32_t>(draw.VertexBindings.size());
+    const uint32_t attributeCount =
+        static_cast<uint32_t>(draw.VertexAttributes.size());
+    append(bindingCount);
+    for (const auto& binding : draw.VertexBindings) {
+        append(binding.Binding);
+        append(binding.ByteStride);
+        append(binding.PerInstance);
+    }
+    append(attributeCount);
+    for (const auto& attribute : draw.VertexAttributes) {
+        append(attribute.Location);
+        append(attribute.Binding);
+        append(attribute.Format);
+        append(attribute.ComponentCount);
+        append(attribute.ByteOffset);
+    }
+    return identity;
+}
+
 } // namespace
 
 GfxMetalPicaDrawExecutor::CachedShader*
@@ -101,6 +129,7 @@ GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
             draw.CanonicalRasterStateId,
             draw.VertexShaderKey,
             draw.FragmentShaderKey,
+            BuildVertexLayoutIdentity(draw),
             reinterpret_cast<uintptr_t>(device.Device()),
             colorPixelFormat,
             depthPixelFormat,
