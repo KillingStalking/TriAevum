@@ -261,6 +261,7 @@ def main() -> int:
             "setFrontFacingWinding" in metal_raster and
             "NativeCullMode::KeepClockwise" in metal_raster and
             "MTL::WindingClockwise" in metal_raster and
+            "PICA cull mode is invalid" in metal_raster and
             "setBlendColor" in metal_raster and
             "ConfigurePicaMetalColorAttachment" in metal_raster_header,
             "PICA blend factors/equations, write mask, culling and winding map to Metal; unsupported logic ops fail explicitly")
