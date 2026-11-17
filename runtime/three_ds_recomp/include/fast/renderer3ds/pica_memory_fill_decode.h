@@ -100,7 +100,8 @@ DecodePicaMemoryFillDepthStencil(
         nativeFormat == 0U ? 0xFFFFU : 0xFFFFFFU;
     return {
         static_cast<float>(depth) / static_cast<float>(maximum),
-        nativeFormat == 3U ? PicaMemoryFillByte(fill, 3U) : 0U};
+        static_cast<uint8_t>(
+            nativeFormat == 3U ? PicaMemoryFillByte(fill, 3U) : 0U)};
 }
 
 } // namespace Fast::Renderer3ds
