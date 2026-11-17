@@ -47,6 +47,13 @@ bool GfxMetalPicaBackend::Initialize(
 bool GfxMetalPicaBackend::BeginFrame(
     MTL::CommandBuffer* commandBuffer,
     std::string* error) {
+    return BeginFrame(commandBuffer, nullptr, error);
+}
+
+bool GfxMetalPicaBackend::BeginFrame(
+    MTL::CommandBuffer* commandBuffer,
+    MTL::Texture* drawableTexture,
+    std::string* error) {
     if (error != nullptr) {
         error->clear();
     }
@@ -59,6 +66,7 @@ bool GfxMetalPicaBackend::BeginFrame(
     mTextureCache.BeginFrame(mFrameIndex);
     mRenderTargetCache.BeginFrame(mFrameIndex);
     mCommandBuffer = commandBuffer;
+    mDrawableTexture = drawableTexture;
     return true;
 }
 
@@ -66,6 +74,7 @@ void GfxMetalPicaBackend::EndFrame() {
     // The host owns and commits/presents this command buffer after all PICA
     // work has been appended to it.
     mCommandBuffer = nullptr;
+    mDrawableTexture = nullptr;
 }
 
 bool GfxMetalPicaBackend::Shutdown(std::string* error) {
@@ -138,8 +147,8 @@ bool GfxMetalPicaBackend::SubmitPicaDisplayTransfer(
         SetError(error, "native PICA Metal display transfer cannot yet execute ordered GPU texture-copy or render-target-capture producers");
         return false;
     }
-    if (transfer.Present) {
-        SetError(error, "native PICA Metal display transfer cannot present until the runtime supplies its active drawable texture");
+    if (transfer.Present && mDrawableTexture == nullptr) {
+        SetError(error, "native PICA Metal display transfer requires the active CAMetalDrawable texture");
         return false;
     }
     if (transfer.MaterializeGuest) {
@@ -184,9 +193,19 @@ bool GfxMetalPicaBackend::SubmitPicaDisplayTransfer(
         }
         return false;
     }
-    return mDisplayTransferCache.Submit(
+    if (!mDisplayTransferCache.Submit(
         mDevice, mCommandBuffer, source->ColorTexture(),
-        transfer, *plan, error);
+        transfer, *plan, error)) {
+        return false;
+    }
+    if (transfer.Present) {
+        MTL::Texture* display = mDisplayTransferCache.Find(
+            transfer.RenderTargetNamespace, transfer.OutputPhysicalAddress);
+        return mDisplayTransferCache.Present(
+            mDevice, mCommandBuffer, display, mDrawableTexture,
+            transfer.PresentationMode, error);
+    }
+    return true;
 }
 
 bool GfxMetalPicaBackend::ClearPicaRenderTarget(
