@@ -6,6 +6,10 @@ endif()
 
 include(cmake/dependencies/vulkan-compiler-dependencies.cmake)
 
+if(CMAKE_VERSION VERSION_LESS 3.28)
+    message(FATAL_ERROR "iOS XCFramework selection requires CMake 3.28 or newer")
+endif()
+
 set(THREE_DS_RECOMP_MOLTENVK_XCFRAMEWORK "" CACHE PATH
     "Path to the static MoltenVK.xcframework built for iOS")
 if(NOT THREE_DS_RECOMP_MOLTENVK_XCFRAMEWORK)
