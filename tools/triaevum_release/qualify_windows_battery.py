@@ -34,7 +34,7 @@ import sys
 import time
 import xml.etree.ElementTree as ElementTree
 from dataclasses import asdict, dataclass, field
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 LAYERS = ("build", "unit", "scenarios")
 
@@ -451,7 +451,7 @@ def scenario_command(scenarios: dict, item: dict, run_dir: Path, save_dir: Path 
 def resolve_scenario_paths(item: dict, repository: Path) -> dict:
     """The item with its relative inputs (SCENARIO_PATH_KEYS) made relative to the repository."""
     return dict(item, **{key: str(repository / item[key]) for key in SCENARIO_PATH_KEYS
-                         if item.get(key) and not Path(item[key]).is_absolute()})
+                         if item.get(key) and not Path(item[key]).is_absolute() and not PureWindowsPath(item[key]).is_absolute()})
 
 
 def scenario_passes(item: dict) -> list[tuple[str, dict]]:
