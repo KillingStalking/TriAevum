@@ -89,6 +89,7 @@ struct PicaDrawView {
     uint32_t FramebufferDepthPhysicalAddress = 0;
     uint8_t FramebufferColorFormat = 0;
     uint8_t FramebufferDepthFormat = 0;
+    // PICA scissor modes: 0 disabled, 1 exclude the rectangle, 3 include it.
     uint8_t ScissorMode = 0;
     uint16_t ScissorX1 = 0;
     uint16_t ScissorY1 = 0;
