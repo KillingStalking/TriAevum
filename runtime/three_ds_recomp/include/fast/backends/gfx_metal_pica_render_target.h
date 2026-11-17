@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 
@@ -14,6 +15,12 @@ class AutoreleasePool;
 }
 
 namespace Fast::Backends {
+
+struct GfxMetalPicaRenderTargetClearValues {
+    std::array<double, 4> Color{0.0, 0.0, 0.0, 0.0};
+    double Depth = 1.0;
+    uint32_t Stencil = 0U;
+};
 
 // Owns one offscreen PICA color/depth target. It deliberately accepts Metal
 // pixel formats from the caller; native PICA format conversion remains a
@@ -42,6 +49,13 @@ class GfxMetalPicaRenderTarget {
         bool clearColor,
         bool clearDepth,
         bool clearStencil,
+        std::string* error = nullptr);
+    [[nodiscard]] bool Begin(
+        MTL::CommandBuffer* commandBuffer,
+        bool clearColor,
+        bool clearDepth,
+        bool clearStencil,
+        const GfxMetalPicaRenderTargetClearValues& clearValues,
         std::string* error = nullptr);
     [[nodiscard]] MTL::RenderCommandEncoder* Encoder() const;
     void End();
