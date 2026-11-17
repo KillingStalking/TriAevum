@@ -30,9 +30,12 @@ argument buffers. The returned shader artifact includes the MSL entry-point name
 descriptor metadata. The same target now contains `GfxMetalPicaDevice`, an
 Objective-C++ owner for the SDL-provided `CAMetalLayer`'s Metal device and a
 dedicated command queue, including a queue-idle fence for orderly shutdown.
-`GfxMetalPicaFrame` now acquires a drawable, creates a clear render pass and
-encoder, then presents and commits the frame. This provides the minimal Metal
-frame lifecycle needed before PICA draw submission is connected. The Windows
+`GfxMetalPicaFrame` now acquires a drawable and command buffer, creates the
+initial clear pass, and presents/commits the frame. It can end that initial
+drawable encoder, keep the same command buffer alive while offscreen PICA
+render targets are encoded, then reopen the drawable for the final composition
+pass. This establishes the ordered command-buffer lifecycle needed to render
+native PICA targets before presenting them. The Windows
 iOS build driver enables this option and builds that library by default.
 
 These are foundation components only. The device/frame wrappers are not yet
