@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <tuple>
 
 #include "fast/backends/gfx_metal_pica_device.h"
 #include "fast/extension/pica_display_transfer.h"
@@ -40,6 +41,19 @@ class GfxMetalPicaDisplayTransferCache {
         const Renderer3ds::PicaDisplayTransferView& transfer,
         const Extension::PicaDisplayTransferPlan& plan,
         std::string* error = nullptr);
+    [[nodiscard]] bool CaptureRenderTarget(
+        GfxMetalPicaDevice& device,
+        MTL::CommandBuffer* commandBuffer,
+        MTL::Texture* source,
+        uint64_t renderTargetNamespace,
+        uint64_t completionId,
+        uint64_t afterDrawSubmissionId,
+        uint32_t physicalAddress,
+        std::string* error = nullptr);
+    [[nodiscard]] MTL::Texture* FindCapturedRenderTarget(
+        uint64_t renderTargetNamespace,
+        uint64_t completionId,
+        uint64_t afterDrawSubmissionId) const;
     [[nodiscard]] bool Present(
         GfxMetalPicaDevice& device,
         MTL::CommandBuffer* commandBuffer,
@@ -58,6 +72,7 @@ class GfxMetalPicaDisplayTransferCache {
         uint32_t OutputPhysicalAddress = 0;
         auto operator<=>(const Key&) const = default;
     };
+    using CaptureKey = std::tuple<uint64_t, uint64_t, uint64_t>;
     struct Entry {
         MTL::Texture* Texture = nullptr;
         uint32_t Width = 0;
@@ -79,6 +94,7 @@ class GfxMetalPicaDisplayTransferCache {
     MTL::ComputePipelineState* mPipeline = nullptr;
     std::map<uint64_t, MTL::RenderPipelineState*> mPresentPipelines;
     std::map<Key, Entry> mEntries;
+    std::map<CaptureKey, MTL::Texture*> mCapturedRenderTargets;
     size_t mResidentBytes = 0;
     size_t mBudgetBytes = kDefaultBudgetBytes;
     uint64_t mFrame = 0;
