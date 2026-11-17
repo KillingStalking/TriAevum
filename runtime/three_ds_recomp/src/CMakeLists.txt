@@ -54,6 +54,7 @@ if(THREE_DS_RECOMP_ENABLE_METAL_PICA)
     add_library(oot3d_metal_shader_translation STATIC
         fast/renderer3ds/pica_msl_shader.cpp
         fast/backends/gfx_metal_pica_device.mm
+        fast/backends/gfx_metal_pica_backend.mm
         fast/backends/gfx_metal_pica_frame.mm
         fast/backends/gfx_metal_pica_render_target.mm
         fast/backends/gfx_metal_pica_render_target_cache.mm
