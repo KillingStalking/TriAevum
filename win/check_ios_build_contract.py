@@ -201,8 +201,11 @@ def main() -> int:
             "the ordered Metal PICA draw encoder binds resources and applies only finite, non-empty PICA viewport state")
     require("gfx_metal_pica_draw_executor.mm" in source_runtime_cmake and
             "TranslatePicaGlslToMsl" in metal_draw_executor and
-            "vertexShader.Compile" in metal_draw_executor and
-            "fragmentShader.Compile" in metal_draw_executor and
+            "mShaderCache" in metal_draw_executor_header and
+            "kMaximumCachedShaders = 128U" in metal_draw_executor and
+            "entry.Device = device.Device()" in metal_draw_executor and
+            "vertexShader->Shader->Function()" in metal_draw_executor and
+            "fragmentShader->Shader->Function()" in metal_draw_executor and
             "resources.Prepare" in metal_draw_executor and
             "resources.VertexDescriptor()" in metal_draw_executor and
             "pipeline.Create" in metal_draw_executor and
