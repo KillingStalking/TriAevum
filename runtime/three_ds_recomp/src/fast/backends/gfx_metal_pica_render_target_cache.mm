@@ -47,6 +47,41 @@ void GfxMetalPicaRenderTargetCache::Clear() {
     mResidentBytes = 0;
 }
 
+bool GfxMetalPicaRenderTargetCache::Clear(
+    uint64_t renderTargetNamespace,
+    uint32_t colorPhysicalAddress,
+    MTL::CommandBuffer* commandBuffer,
+    std::string* error) {
+    if (error != nullptr) {
+        error->clear();
+    }
+    if (commandBuffer == nullptr || colorPhysicalAddress == 0U) {
+        SetError(error, "PICA Metal target clear requires a command buffer and color attachment address");
+        return false;
+    }
+
+    for (auto& [key, entry] : mEntries) {
+        if (key.RenderTargetNamespace != renderTargetNamespace ||
+            key.ColorPhysicalAddress != colorPhysicalAddress) {
+            continue;
+        }
+        auto& target = *entry.Target;
+        if (!target.Begin(
+                commandBuffer,
+                true,
+                target.DepthTexture() != nullptr,
+                target.StencilPixelFormat() != 0U,
+                error)) {
+            return false;
+        }
+        target.End();
+        entry.LastUsedFrame = mCurrentFrame;
+    }
+    // A target that has not been allocated yet starts with the same transparent
+    // color, default depth and zero stencil on its first draw.
+    return true;
+}
+
 GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::Resolve(
     GfxMetalPicaDevice& device,
     const Renderer3ds::PicaDrawView& draw,
