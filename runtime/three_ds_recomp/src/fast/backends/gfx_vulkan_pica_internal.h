@@ -39,6 +39,7 @@
 #include "fast/extension/pica_nri_vertex_input.h"
 #include "fast/extension/pica_nri_pipeline_state.h"
 #include "fast/renderer3ds/pica_pipeline_identity.h"
+#include "fast/renderer3ds/pica_memory_fill_decode.h"
 #include "fast/renderer3ds/pica_surface_lighting.h"
 #include "fast/renderer3ds/pica_tev_program.h"
 #include "fast/extension/pica_uniform_layout.h"
@@ -338,75 +339,37 @@ VkImageAspectFlags NativeDepthAspect(VkFormat format) {
 }
 
 uint32_t NativePicaColorBytesPerPixel(uint8_t format) {
-    return format == 0U ? 4U : (format == 1U ? 3U : 2U);
+    return Renderer3ds::PicaColorBytesPerPixel(format);
 }
 
 uint32_t NativePicaDepthBytesPerPixel(uint8_t format) {
-    return format == 0U ? 2U : (format == 2U ? 3U : 4U);
+    return Renderer3ds::PicaDepthBytesPerPixel(format);
 }
 
 uint32_t NativePicaFillElementSize(uint16_t control) {
-    return (control & (1U << 9U)) != 0U
-               ? 4U
-               : ((control & (1U << 8U)) != 0U ? 3U : 2U);
+    return Renderer3ds::PicaMemoryFillElementSize(control);
 }
 
 uint8_t NativePicaFillByte(const GfxNativePicaMemoryFillView& fill,
                            uint32_t index) {
-    const uint32_t shift = (index % NativePicaFillElementSize(fill.Control)) * 8U;
-    return static_cast<uint8_t>(fill.Value >> shift);
-}
-
-float NativePicaUnorm(uint32_t value, uint32_t maximum) {
-    return static_cast<float>(value) / static_cast<float>(maximum);
+    return Renderer3ds::PicaMemoryFillByte(fill, index);
 }
 
 VkClearColorValue DecodeNativePicaClearColor(
     const GfxNativePicaMemoryFillView& fill, uint8_t format) {
-    const uint8_t b0 = NativePicaFillByte(fill, 0U);
-    const uint8_t b1 = NativePicaFillByte(fill, 1U);
-    const uint8_t b2 = NativePicaFillByte(fill, 2U);
-    const uint8_t b3 = NativePicaFillByte(fill, 3U);
-    std::array<float, 4> color{};
-    if (format == 0U) {
-        color = {NativePicaUnorm(b3, 0xFFU), NativePicaUnorm(b2, 0xFFU),
-                 NativePicaUnorm(b1, 0xFFU), NativePicaUnorm(b0, 0xFFU)};
-    } else if (format == 1U) {
-        color = {NativePicaUnorm(b2, 0xFFU), NativePicaUnorm(b1, 0xFFU),
-                 NativePicaUnorm(b0, 0xFFU), 1.0F};
-    } else {
-        const uint16_t packed = static_cast<uint16_t>(b0) |
-                                static_cast<uint16_t>(b1) << 8U;
-        if (format == 2U) {
-            color = {NativePicaUnorm((packed >> 11U) & 0x1FU, 0x1FU),
-                     NativePicaUnorm((packed >> 5U) & 0x3FU, 0x3FU),
-                     NativePicaUnorm(packed & 0x1FU, 0x1FU), 1.0F};
-        } else if (format == 3U) {
-            color = {NativePicaUnorm((packed >> 11U) & 0x1FU, 0x1FU),
-                     NativePicaUnorm((packed >> 6U) & 0x1FU, 0x1FU),
-                     NativePicaUnorm((packed >> 1U) & 0x1FU, 0x1FU),
-                     static_cast<float>(packed & 1U)};
-        } else {
-            color = {NativePicaUnorm((packed >> 12U) & 0xFU, 0xFU),
-                     NativePicaUnorm((packed >> 8U) & 0xFU, 0xFU),
-                     NativePicaUnorm((packed >> 4U) & 0xFU, 0xFU),
-                     NativePicaUnorm(packed & 0xFU, 0xFU)};
-        }
-    }
     VkClearColorValue result{};
-    std::copy(color.begin(), color.end(), result.float32);
+    const auto decoded =
+        Renderer3ds::DecodePicaMemoryFillColor(fill, format);
+    std::copy(
+        decoded.Value.begin(), decoded.Value.end(), result.float32);
     return result;
 }
 
 VkClearDepthStencilValue DecodeNativePicaClearDepthStencil(
     const GfxNativePicaMemoryFillView& fill, uint8_t format) {
-    const uint32_t b0 = NativePicaFillByte(fill, 0U);
-    const uint32_t b1 = NativePicaFillByte(fill, 1U);
-    const uint32_t b2 = NativePicaFillByte(fill, 2U);
-    const uint32_t depth = format == 0U ? b0 | (b1 << 8U)
-                                        : b0 | (b1 << 8U) | (b2 << 16U);
-    return {NativePicaUnorm(depth, format == 0U ? 0xFFFFU : 0xFFFFFFU),
-            format == 3U ? NativePicaFillByte(fill, 3U) : 0U};
+    const auto decoded =
+        Renderer3ds::DecodePicaMemoryFillDepthStencil(fill, format);
+    return {decoded.Depth, decoded.Stencil};
 }
 
 bool BuildNativePicaMemoryFillSmoke(
