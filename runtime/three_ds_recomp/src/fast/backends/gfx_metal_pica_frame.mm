@@ -85,6 +85,10 @@ MTL::CommandBuffer* GfxMetalPicaFrame::CommandBuffer() const {
     return mCommandBuffer;
 }
 
+MTL::Texture* GfxMetalPicaFrame::DrawableTexture() const {
+    return mDrawable != nullptr ? mDrawable->texture() : nullptr;
+}
+
 bool GfxMetalPicaFrame::EndEncoding(std::string* error) {
     if (error != nullptr) {
         error->clear();
