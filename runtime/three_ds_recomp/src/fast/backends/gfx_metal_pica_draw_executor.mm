@@ -265,7 +265,9 @@ bool GfxMetalPicaDrawExecutor::ResolveAttachmentFormats(
 
     if (draw.FramebufferColorPhysicalAddress == 0U ||
         draw.FramebufferWidth == 0U || draw.FramebufferHeight == 0U ||
-        draw.FramebufferDepthFormat > 3U) {
+        draw.FramebufferDepthFormat > 3U ||
+        (draw.FramebufferDepthFormat == 3U &&
+         draw.FramebufferDepthPhysicalAddress == 0U)) {
         SetError(error, "PICA Metal attachment policy received an invalid framebuffer identity or extent");
         return false;
     }
