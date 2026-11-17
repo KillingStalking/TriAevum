@@ -1,9 +1,14 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
+#include <memory>
 #include <string>
+#include <string_view>
 
 #include "fast/backends/gfx_metal_pica_device.h"
+#include "fast/backends/gfx_metal_pica_shader.h"
+#include "fast/renderer3ds/pica_msl_shader.h"
 #include "fast/backends/gfx_metal_pica_render_target_cache.h"
 #include "fast/backends/gfx_metal_pica_texture_cache.h"
 #include "fast/renderer3ds/pica_render_backend.h"
@@ -19,7 +24,7 @@ namespace Fast::Backends {
 // submission to the owning renderer.
 class GfxMetalPicaDrawExecutor {
   public:
-    [[nodiscard]] static bool Encode(
+    [[nodiscard]] bool Encode(
         GfxMetalPicaDevice& device,
         GfxMetalPicaTextureCache& textureCache,
         GfxMetalPicaRenderTargetCache& renderTargetCache,
@@ -32,6 +37,25 @@ class GfxMetalPicaDrawExecutor {
         bool clearDepth = false,
         bool clearStencil = false,
         std::string* error = nullptr);
+
+    void ClearShaderCache();
+    [[nodiscard]] size_t CachedShaderCount() const;
+
+  private:
+    struct CachedShader {
+        Renderer3ds::PicaMslShaderArtifact Artifact;
+        std::unique_ptr<GfxMetalPicaShader> Shader;
+        uint64_t LastUsed = 0;
+    };
+
+    [[nodiscard]] CachedShader* ResolveShader(
+        GfxMetalPicaDevice& device,
+        std::string_view source,
+        Renderer3ds::PicaMslShaderStage stage,
+        std::string* error);
+
+    std::map<std::string, CachedShader> mShaderCache;
+    uint64_t mShaderCacheClock = 0;
 };
 
 } // namespace Fast::Backends
