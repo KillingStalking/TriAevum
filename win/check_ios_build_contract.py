@@ -159,7 +159,7 @@ def main() -> int:
             "metalStencilPixelFormat != metalDepthPixelFormat" in metal_render_target_cache and
             "kDefaultBudgetBytes = 192U * 1024U * 1024U" in metal_render_target_cache_header and
             "LastUsedFrame" in metal_render_target_cache and
-            "IsActive()" in metal_render_target_cache and
+            "refusing to discard live render-target contents" in metal_render_target_cache and
             "GfxMetalPicaRenderTargetCache::Clear" in metal_render_target_cache and
             "target.Begin(" in metal_render_target_cache and
             "target.End()" in metal_render_target_cache_header + metal_render_target_cache and
