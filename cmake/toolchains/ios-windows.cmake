@@ -4,9 +4,9 @@
 #   IOS_SDK_ROOT  - root of an extracted iPhoneOS.platform/Developer/SDKs/iPhoneOS*.sdk
 #   LLVM_ROOT     - LLVM installation root (bin/clang.exe, bin/clang++.exe, bin/ld64.lld.exe)
 #
-# This file deliberately does not select or enable a renderer.  The current
-# PICA/NRI execution path is Vulkan-only; selecting Metal requires a separate
-# native PICA Metal implementation.
+# This file selects the iOS device ABI and toolchain only. Renderer selection is
+# controlled by the project options: native PICA Metal is opt-in through
+# THREE_DS_RECOMP_ENABLE_METAL_PICA; Vulkan/NRI remain separate desktop paths.
 
 if(NOT WIN32)
     message(FATAL_ERROR "ios-windows.cmake is intended for a Windows build host")
