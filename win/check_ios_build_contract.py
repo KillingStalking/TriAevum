@@ -150,7 +150,10 @@ def main() -> int:
             "metalStencilPixelFormat != metalDepthPixelFormat" in metal_render_target_cache and
             "kDefaultBudgetBytes = 192U * 1024U * 1024U" in metal_render_target_cache_header and
             "LastUsedFrame" in metal_render_target_cache and
-            "IsActive()" in metal_render_target_cache,
+            "IsActive()" in metal_render_target_cache and
+            "GfxMetalPicaRenderTargetCache::Clear" in metal_render_target_cache and
+            "target.Begin(" in metal_render_target_cache and
+            "target.End()" in metal_render_target_cache_header + metal_render_target_cache,
             "PICA physical framebuffer identities reuse offscreen Metal targets with frame-aware LRU residency")
     require("gfx_metal_pica_argument_buffer.mm" in source_runtime_cmake and
             "newArgumentEncoder(0)" in metal_argument_buffer and
