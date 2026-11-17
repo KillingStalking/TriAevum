@@ -360,8 +360,13 @@ bool GfxMetalPicaDrawExecutor::Encode(
         device, draw.FragmentShaderSource,
         Renderer3ds::PicaMslShaderStage::Fragment, error);
     if (fragmentShader == nullptr) {
+        vertexShader->LastUsed = ++mShaderCacheClock;
+        PruneShaderCache();
         return false;
     }
+    vertexShader->LastUsed = ++mShaderCacheClock;
+    fragmentShader->LastUsed = ++mShaderCacheClock;
+    PruneShaderCache();
 
     GfxMetalPicaDrawResources resources;
     if (!resources.Prepare(
@@ -386,6 +391,7 @@ bool GfxMetalPicaDrawExecutor::Encode(
     if (pipeline == nullptr) {
         return false;
     }
+    PrunePipelineCache();
 
     GfxMetalPicaRenderTarget* target = renderTargetCache.Resolve(
         device, draw, colorPixelFormat, depthPixelFormat,
