@@ -38,6 +38,7 @@ class GfxMetalPicaDrawResources {
     void Reset();
 
     [[nodiscard]] bool Bind(MTL::RenderCommandEncoder* encoder) const;
+    [[nodiscard]] MTL::VertexDescriptor* VertexDescriptor() const;
     [[nodiscard]] bool EncodeDraw(
         MTL::RenderCommandEncoder* encoder,
         std::string* error = nullptr) const;
