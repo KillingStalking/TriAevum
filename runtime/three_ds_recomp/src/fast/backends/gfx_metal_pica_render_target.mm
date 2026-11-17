@@ -123,6 +123,18 @@ bool GfxMetalPicaRenderTarget::Begin(
     bool clearDepth,
     bool clearStencil,
     std::string* error) {
+    return Begin(
+        commandBuffer, clearColor, clearDepth, clearStencil,
+        GfxMetalPicaRenderTargetClearValues{}, error);
+}
+
+bool GfxMetalPicaRenderTarget::Begin(
+    MTL::CommandBuffer* commandBuffer,
+    bool clearColor,
+    bool clearDepth,
+    bool clearStencil,
+    const GfxMetalPicaRenderTargetClearValues& clearValues,
+    std::string* error) {
     if (error != nullptr) {
         error->clear();
     }
@@ -162,7 +174,9 @@ bool GfxMetalPicaRenderTarget::Begin(
     color->setLoadAction(
         effectiveClearColor ? MTL::LoadActionClear : MTL::LoadActionLoad);
     color->setStoreAction(MTL::StoreActionStore);
-    color->setClearColor(MTL::ClearColor::Make(0.0, 0.0, 0.0, 0.0));
+    color->setClearColor(MTL::ClearColor::Make(
+        clearValues.Color[0], clearValues.Color[1],
+        clearValues.Color[2], clearValues.Color[3]));
 
     if (mDepthTexture != nullptr) {
         auto* depth = pass->depthAttachment();
@@ -170,7 +184,7 @@ bool GfxMetalPicaRenderTarget::Begin(
         depth->setLoadAction(
             effectiveClearDepth ? MTL::LoadActionClear : MTL::LoadActionLoad);
         depth->setStoreAction(MTL::StoreActionStore);
-        depth->setClearDepth(1.0);
+        depth->setClearDepth(clearValues.Depth);
     }
     if (mStencilPixelFormat != 0U) {
         auto* stencil = pass->stencilAttachment();
@@ -178,7 +192,7 @@ bool GfxMetalPicaRenderTarget::Begin(
         stencil->setLoadAction(
             effectiveClearStencil ? MTL::LoadActionClear : MTL::LoadActionLoad);
         stencil->setStoreAction(MTL::StoreActionStore);
-        stencil->setClearStencil(0U);
+        stencil->setClearStencil(clearValues.Stencil);
     }
 
     mEncoder = commandBuffer->renderCommandEncoder(pass);
