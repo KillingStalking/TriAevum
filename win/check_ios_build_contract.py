@@ -130,8 +130,10 @@ def main() -> int:
             "mDisplayTransferCache.Submit" in metal_backend and
             "FindColorTarget" in metal_backend and
             "FindDisplayTexture" in metal_backend and
-            "native PICA Metal display transfer cannot present" in metal_backend,
-            "the concrete Metal PICA backend owns draw, clear, memory-fill and offscreen display-transfer submission while refusing unconnected presentation")
+            "mDisplayTransferCache.Present" in metal_backend and
+            "mDrawableTexture" in metal_backend and
+            "DrawableTexture() const" in metal_frame_header,
+            "the concrete Metal PICA backend owns draw, clear, memory-fill and can route display transfers to the active drawable compositor")
     require("gfx_metal_pica_display_transfer.mm" in source_runtime_cmake and
             "BuildPicaDisplayTransferPlan" in metal_backend and
             "newComputePipelineState" in metal_display_transfer and
@@ -141,8 +143,13 @@ def main() -> int:
             "MTL::Texture* Find(" in metal_display_transfer_header and
             "uint64_t renderTargetNamespace" in metal_display_transfer_header and
             "TextureCopyBytes" in metal_backend and
-            "MaterializeGuest" in metal_backend,
-            "Metal executes ordered PICA display scaling/box filtering into retained GPU display images and rejects unsupported copy, readback and presentation paths");
+            "MaterializeGuest" in metal_backend and
+            "EnsurePresentPipeline" in metal_display_transfer and
+            "pica_present_vertex" in metal_display_transfer and
+            "pica_present_fragment" in metal_display_transfer and
+            "drawPrimitives(MTL::PrimitiveTypeTriangle" in metal_display_transfer and
+            "setBlendingEnabled(true)" in metal_display_transfer,
+            "Metal executes ordered PICA display scaling and composes retained GPU display images into CAMetalDrawable with replace/alpha-overlay modes");
     require("gfx_metal_pica_device.mm" in source_runtime_cmake and
             "GfxMetalPicaDevice::Initialize" in metal_device and
             "GfxMetalPicaDevice::WaitIdle" in metal_device and
@@ -156,6 +163,8 @@ def main() -> int:
             "presentDrawable" in metal_frame and
             "EndAndPresent" in metal_frame_header and
             "CommandBuffer() const" in metal_frame_header and
+            "DrawableTexture() const" in metal_frame_header and
+            "mDrawable->texture()" in metal_frame and
             "EndEncoding(" in metal_frame and
             "BeginDrawablePass(" in metal_frame and
             "HasActiveEncoder() const" in metal_frame,
