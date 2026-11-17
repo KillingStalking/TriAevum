@@ -159,6 +159,15 @@ bool BindPicaMetalRasterState(
         return false;
     }
 
+    if (cullMode != Renderer3ds::NativeCullMode::KeepAll &&
+        cullMode != Renderer3ds::NativeCullMode::KeepClockwise &&
+        cullMode != Renderer3ds::NativeCullMode::KeepCounterClockwise) {
+        if (error != nullptr) {
+            *error = "PICA cull mode is invalid";
+        }
+        return false;
+    }
+
     encoder->setCullMode(
         cullMode == Renderer3ds::NativeCullMode::KeepAll
             ? MTL::CullModeNone
