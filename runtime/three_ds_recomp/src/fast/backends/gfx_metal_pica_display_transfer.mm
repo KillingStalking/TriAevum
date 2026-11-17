@@ -283,6 +283,7 @@ bool GfxMetalPicaDisplayTransferCache::CaptureRenderTarget(
     if (error != nullptr) error->clear();
     if (!device.IsReady() || commandBuffer == nullptr || source == nullptr ||
         commandBuffer->commandQueue() != device.CommandQueue() ||
+        (mDevice != nullptr && mDevice != device.Device()) ||
         source->width() == 0U || source->height() == 0U ||
         source->pixelFormat() != MTL::PixelFormatRGBA8Unorm ||
         source->sampleCount() != 1U || physicalAddress == 0U ||
@@ -323,11 +324,12 @@ bool GfxMetalPicaDisplayTransferCache::CaptureRenderTarget(
         return false;
     }
     encoder->copyFromTexture(
-        source, 0U, 0U, MTL::Origin(0U, 0U, 0U),
+        source, 0U, 0U, MTL::Origin::Make(0U, 0U, 0U),
         MTL::Size(source->width(), source->height(), 1U),
         captured, 0U, 0U, MTL::Origin(0U, 0U, 0U));
     encoder->endEncoding();
     mCapturedRenderTargets.emplace(key, captured);
+    mDevice = device.Device();
     mResidentBytes += static_cast<size_t>(bytes64);
     return true;
 }
