@@ -99,6 +99,7 @@ class GfxMetalPicaDrawExecutor {
         uint64_t CanonicalRasterStateId = 0;
         uint64_t VertexShaderKey = 0;
         uint64_t FragmentShaderKey = 0;
+        std::string VertexLayoutIdentity;
         uintptr_t DeviceIdentity = 0;
         uint32_t ColorPixelFormat = 0;
         uint32_t DepthPixelFormat = 0;
