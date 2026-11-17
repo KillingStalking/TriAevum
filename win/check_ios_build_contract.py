@@ -138,7 +138,8 @@ def main() -> int:
             "dispatchThreads" in metal_display_transfer and
             "TextureUsageShaderWrite" in metal_display_transfer and
             "PicaDisplayTransferView" in metal_display_transfer_header and
-            "Find(uint64_t renderTargetNamespace" in metal_display_transfer_header and
+            "MTL::Texture* Find(" in metal_display_transfer_header and
+            "uint64_t renderTargetNamespace" in metal_display_transfer_header and
             "TextureCopyBytes" in metal_backend and
             "MaterializeGuest" in metal_backend,
             "Metal executes ordered PICA display scaling/box filtering into retained GPU display images and rejects unsupported copy, readback and presentation paths");
