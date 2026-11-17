@@ -12,6 +12,7 @@
 
 namespace MTL {
 class CommandBuffer;
+class Texture;
 }
 
 struct SDL_Renderer;
