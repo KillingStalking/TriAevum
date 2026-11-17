@@ -43,10 +43,14 @@ shader-stage ownership and rejects descriptor kinds that the current Metal
 resource path cannot satisfy. Its caller must still bind the matching pipeline
 and active render pass before encoding the draw. `GfxMetalPicaDrawEncoder`
 now performs that sequence for one ordered draw: begin the offscreen target,
-bind pipeline and prepared resources, encode the vertex/index draw, then end
-the pass. It verifies framebuffer extent, color/depth/stencil formats and
-sample count against the pipeline before recording commands. Command-buffer
-submission and cross-draw scheduling remain with the future renderer. `GfxMetalPicaRenderTarget`
+bind pipeline and prepared resources, apply the validated framebuffer-pixel
+viewport, encode the vertex/index draw, then end the pass. It maps PICA scissor
+mode 3 to an inclusive rectangle and mode 1 to up to four disjoint rectangles
+using the shared renderer-neutral exclusion helper; the partition keeps blend
+and stencil effects from executing more than once per retained fragment. Mode
+0 covers the full target. It verifies framebuffer extent, color/depth/stencil
+formats and sample count against the pipeline before recording commands.
+Command-buffer submission and cross-draw scheduling remain with the future renderer. `GfxMetalPicaRenderTarget`
 now allocates offscreen color and optional combined depth/stencil textures,
 creates render encoders on a caller-owned command buffer, and supports clear or
 load/store attachment actions. The first implementation explicitly rejects
