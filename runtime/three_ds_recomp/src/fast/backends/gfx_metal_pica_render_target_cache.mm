@@ -35,12 +35,10 @@ GfxMetalPicaRenderTargetCache::~GfxMetalPicaRenderTargetCache() {
 
 void GfxMetalPicaRenderTargetCache::BeginFrame(uint64_t frame) {
     mCurrentFrame = frame;
-    EvictToBudget();
 }
 
 void GfxMetalPicaRenderTargetCache::SetBudgetBytes(size_t bytes) {
     mBudgetBytes = bytes;
-    EvictToBudget();
 }
 
 void GfxMetalPicaRenderTargetCache::Clear() {
@@ -154,6 +152,11 @@ GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::Resolve(
         SetError(error, "PICA Metal render-target cache byte estimate overflowed");
         return nullptr;
     }
+    if (bytes > mBudgetBytes ||
+        mResidentBytes > mBudgetBytes - bytes) {
+        SetError(error, "PICA Metal framebuffer residency budget is exhausted; refusing to discard live render-target contents");
+        return nullptr;
+    }
 
     auto target = std::make_unique<GfxMetalPicaRenderTarget>();
     if (!target->Create(
@@ -183,7 +186,6 @@ GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::Resolve(
             inserted->first, inserted->second, commandBuffer, error)) {
         return nullptr;
     }
-    EvictToBudget();
     return inserted->second.Target.get();
 }
 
@@ -300,27 +302,6 @@ bool GfxMetalPicaRenderTargetCache::ApplyPendingMemoryFills(
         fill = mPendingMemoryFills.erase(fill);
     }
     return true;
-}
-
-void GfxMetalPicaRenderTargetCache::EvictToBudget() {
-    while (mResidentBytes > mBudgetBytes && !mEntries.empty()) {
-        auto oldest = mEntries.end();
-        for (auto candidate = mEntries.begin(); candidate != mEntries.end(); ++candidate) {
-            if (candidate->second.LastUsedFrame == mCurrentFrame ||
-                candidate->second.Target->IsActive()) {
-                continue;
-            }
-            if (oldest == mEntries.end() ||
-                candidate->second.LastUsedFrame < oldest->second.LastUsedFrame) {
-                oldest = candidate;
-            }
-        }
-        if (oldest == mEntries.end()) {
-            break;
-        }
-        mResidentBytes -= oldest->second.Bytes;
-        mEntries.erase(oldest);
-    }
 }
 
 size_t GfxMetalPicaRenderTargetCache::EntryCount() const {
