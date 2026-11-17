@@ -8,6 +8,7 @@
 
 #include <Metal/Metal.hpp>
 
+#include <algorithm>
 #include <utility>
 
 namespace Fast::Backends {
@@ -33,9 +34,13 @@ GfxMetalPicaDrawExecutor::ResolveShader(
     key.append(source.data(), source.size());
 
     auto found = mShaderCache.find(key);
-    if (found != mShaderCache.end()) {
+    if (found != mShaderCache.end() &&
+        found->second.Device == device.Device()) {
         found->second.LastUsed = ++mShaderCacheClock;
         return &found->second;
+    }
+    if (found != mShaderCache.end()) {
+        mShaderCache.erase(found);
     }
 
     CachedShader entry;
@@ -47,6 +52,7 @@ GfxMetalPicaDrawExecutor::ResolveShader(
     if (!entry.Shader->Compile(device.Device(), entry.Artifact, error)) {
         return nullptr;
     }
+    entry.Device = device.Device();
     entry.LastUsed = ++mShaderCacheClock;
     auto [inserted, wasInserted] =
         mShaderCache.emplace(std::move(key), std::move(entry));
@@ -55,25 +61,22 @@ GfxMetalPicaDrawExecutor::ResolveShader(
         return nullptr;
     }
 
+    return &inserted->second;
+}
+
+void GfxMetalPicaDrawExecutor::PruneShaderCache() {
     constexpr size_t kMaximumCachedShaders = 128U;
     while (mShaderCache.size() > kMaximumCachedShaders) {
-        auto oldest = mShaderCache.end();
-        for (auto candidate = mShaderCache.begin();
-             candidate != mShaderCache.end(); ++candidate) {
-            if (candidate == inserted) {
-                continue;
-            }
-            if (oldest == mShaderCache.end() ||
-                candidate->second.LastUsed < oldest->second.LastUsed) {
-                oldest = candidate;
-            }
-        }
+        const auto oldest = std::min_element(
+            mShaderCache.begin(), mShaderCache.end(),
+            [](const auto& left, const auto& right) {
+                return left.second.LastUsed < right.second.LastUsed;
+            });
         if (oldest == mShaderCache.end()) {
             break;
         }
         mShaderCache.erase(oldest);
     }
-    return &inserted->second;
 }
 
 void GfxMetalPicaDrawExecutor::ClearShaderCache() {
@@ -158,9 +161,13 @@ bool GfxMetalPicaDrawExecutor::Encode(
         return false;
     }
 
-    return GfxMetalPicaDrawEncoder::Encode(
+    const bool encoded = GfxMetalPicaDrawEncoder::Encode(
         commandBuffer, *target, pipeline, resources, draw,
         clearColor, clearDepth, clearStencil, error);
+    vertexShader->LastUsed = ++mShaderCacheClock;
+    fragmentShader->LastUsed = ++mShaderCacheClock;
+    PruneShaderCache();
+    return encoded;
 }
 
 } // namespace Fast::Backends
