@@ -27,10 +27,8 @@ std::string BuildVertexLayoutIdentity(
         identity.append(
             reinterpret_cast<const char*>(&value), sizeof(value));
     };
-    const uint32_t bindingCount =
-        static_cast<uint32_t>(draw.VertexBindings.size());
-    const uint32_t attributeCount =
-        static_cast<uint32_t>(draw.VertexAttributes.size());
+    const size_t bindingCount = draw.VertexBindings.size();
+    const size_t attributeCount = draw.VertexAttributes.size();
     append(bindingCount);
     for (const auto& binding : draw.VertexBindings) {
         append(binding.Binding);
