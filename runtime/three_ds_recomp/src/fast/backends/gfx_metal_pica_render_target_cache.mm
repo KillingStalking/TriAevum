@@ -219,15 +219,16 @@ bool GfxMetalPicaRenderTargetCache::SubmitMemoryFill(
         return false;
     }
 
-    const auto previous = std::find_if(
-        mPendingMemoryFills.begin(), mPendingMemoryFills.end(),
-        [&](const auto& pending) {
-            return pending.StartPhysicalAddress == fill.StartPhysicalAddress &&
-                   pending.EndPhysicalAddress == fill.EndPhysicalAddress &&
-                   pending.RenderTargetNamespace == fill.RenderTargetNamespace;
-        });
-    if (previous != mPendingMemoryFills.end()) {
-        *previous = fill;
+    const bool replacesAdjacentFill =
+        !mPendingMemoryFills.empty() &&
+        mPendingMemoryFills.back().StartPhysicalAddress ==
+            fill.StartPhysicalAddress &&
+        mPendingMemoryFills.back().EndPhysicalAddress ==
+            fill.EndPhysicalAddress &&
+        mPendingMemoryFills.back().RenderTargetNamespace ==
+            fill.RenderTargetNamespace;
+    if (replacesAdjacentFill) {
+        mPendingMemoryFills.back() = fill;
     } else {
         mPendingMemoryFills.push_back(fill);
     }
