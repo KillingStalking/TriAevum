@@ -129,7 +129,7 @@ def main() -> int:
             "mRenderTargetCache.SubmitMemoryFill" in metal_backend and
             "mDisplayTransferCache.Submit" in metal_backend and
             "FindColorTarget" in metal_backend and
-            "FindDisplayTexture" in metal_backend and
+            "mDisplayTransferCache.Find(" in metal_backend and
             "mDisplayTransferCache.Present" in metal_backend and
             "mDrawableTexture" in metal_backend and
             "DrawableTexture() const" in metal_frame_header,
