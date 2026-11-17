@@ -275,13 +275,33 @@ bool GfxMetalPicaRenderTargetCache::ApplyPendingMemoryFills(
             ++fill;
             continue;
         }
-        const bool coversColor =
-            fill->StartPhysicalAddress <= key.ColorPhysicalAddress &&
-            fill->EndPhysicalAddress >= colorEnd;
-        const bool coversDepth =
+        const uint64_t fillStart = fill->StartPhysicalAddress;
+        const uint64_t fillEnd = fill->EndPhysicalAddress;
+        const uint64_t colorStart = key.ColorPhysicalAddress;
+        const uint64_t depthStart = key.DepthPhysicalAddress;
+        const bool overlapsColor =
+            fillStart < colorEnd && fillEnd > colorStart;
+        const bool overlapsDepth =
             key.DepthPhysicalAddress != 0U &&
-            fill->StartPhysicalAddress <= key.DepthPhysicalAddress &&
-            fill->EndPhysicalAddress >= depthEnd;
+            fillStart < depthEnd && fillEnd > depthStart;
+        const bool coversColor =
+            overlapsColor && fillStart <= colorStart && fillEnd >= colorEnd;
+        const bool coversDepth =
+            overlapsDepth && fillStart <= depthStart && fillEnd >= depthEnd;
+
+        // This backend currently expresses fills as whole-attachment render
+        // pass clears. A partial physical-range overlap cannot be represented
+        // by that operation: leaving it pending would silently preserve stale
+        // pixels, while clearing the whole attachment would overwrite bytes
+        // outside the guest fill. Reject the operation instead of pretending
+        // that it was applied.
+        if ((overlapsColor && !coversColor) ||
+            (overlapsDepth && !coversDepth)) {
+            SetError(
+                error,
+                "PICA Metal memory fill partially overlaps a framebuffer attachment; partial attachment fills are not implemented");
+            return false;
+        }
         if (!coversColor && !coversDepth) {
             ++fill;
             continue;
