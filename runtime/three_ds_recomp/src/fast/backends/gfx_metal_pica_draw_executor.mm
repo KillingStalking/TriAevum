@@ -188,6 +188,55 @@ size_t GfxMetalPicaDrawExecutor::CachedShaderCount() const {
     return mShaderCache.size();
 }
 
+bool GfxMetalPicaDrawExecutor::ResolveAttachmentFormats(
+    const Renderer3ds::PicaDrawView& draw,
+    uint32_t& colorPixelFormat,
+    uint32_t& depthPixelFormat,
+    uint32_t& stencilPixelFormat,
+    std::string* error) {
+    if (error != nullptr) {
+        error->clear();
+    }
+    colorPixelFormat = 0U;
+    depthPixelFormat = 0U;
+    stencilPixelFormat = 0U;
+
+    if (draw.FramebufferColorPhysicalAddress == 0U ||
+        draw.FramebufferWidth == 0U || draw.FramebufferHeight == 0U ||
+        draw.FramebufferDepthFormat > 3U) {
+        SetError(error, "PICA Metal attachment policy received an invalid framebuffer identity or extent");
+        return false;
+    }
+
+    colorPixelFormat = static_cast<uint32_t>(MTL::PixelFormatRGBA8Unorm);
+    if (draw.FramebufferDepthPhysicalAddress == 0U) {
+        if (draw.DepthTestEnabled || draw.DepthWriteEnabled ||
+            draw.Stencil.Enabled) {
+            colorPixelFormat = 0U;
+            SetError(error, "PICA draw requires depth/stencil state but has no depth attachment");
+            return false;
+        }
+        return true;
+    }
+
+    if (draw.FramebufferDepthFormat == 3U) {
+        depthPixelFormat =
+            static_cast<uint32_t>(MTL::PixelFormatDepth32Float_Stencil8);
+        // The native target owns a combined depth/stencil image even when a
+        // particular draw has stencil testing disabled.
+        stencilPixelFormat = depthPixelFormat;
+    } else {
+        if (draw.Stencil.Enabled) {
+            colorPixelFormat = 0U;
+            SetError(error, "PICA stencil state requires the native combined depth/stencil format");
+            return false;
+        }
+        depthPixelFormat =
+            static_cast<uint32_t>(MTL::PixelFormatDepth32Float);
+    }
+    return true;
+}
+
 bool GfxMetalPicaDrawExecutor::Encode(
     GfxMetalPicaDevice& device,
     GfxMetalPicaTextureCache& textureCache,
