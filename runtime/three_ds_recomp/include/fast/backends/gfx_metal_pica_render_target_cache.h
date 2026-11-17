@@ -29,6 +29,14 @@ class GfxMetalPicaRenderTargetCache {
     void SetBudgetBytes(size_t bytes);
     void Clear();
 
+    // Clears every cached extent/depth variant for one guest color
+    // attachment, matching the native PICA target-clear identity.
+    [[nodiscard]] bool Clear(
+        uint64_t renderTargetNamespace,
+        uint32_t colorPhysicalAddress,
+        MTL::CommandBuffer* commandBuffer,
+        std::string* error = nullptr);
+
     [[nodiscard]] GfxMetalPicaRenderTarget* Resolve(
         GfxMetalPicaDevice& device,
         const Renderer3ds::PicaDrawView& draw,
