@@ -99,6 +99,11 @@ void GfxMetalPicaDisplayTransferCache::Clear() {
         }
     }
     mEntries.clear();
+    for (auto& [key, texture] : mCapturedRenderTargets) {
+        (void)key;
+        if (texture != nullptr) texture->release();
+    }
+    mCapturedRenderTargets.clear();
     mResidentBytes = 0;
     if (mPipeline != nullptr) {
         mPipeline->release();
@@ -264,6 +269,77 @@ bool GfxMetalPicaDisplayTransferCache::Submit(
     return true;
 }
 
+
+
+bool GfxMetalPicaDisplayTransferCache::CaptureRenderTarget(
+    GfxMetalPicaDevice& device,
+    MTL::CommandBuffer* commandBuffer,
+    MTL::Texture* source,
+    uint64_t renderTargetNamespace,
+    uint64_t completionId,
+    uint64_t afterDrawSubmissionId,
+    uint32_t physicalAddress,
+    std::string* error) {
+    if (error != nullptr) error->clear();
+    if (!device.IsReady() || commandBuffer == nullptr || source == nullptr ||
+        commandBuffer->commandQueue() != device.CommandQueue() ||
+        source->width() == 0U || source->height() == 0U ||
+        source->pixelFormat() != MTL::PixelFormatRGBA8Unorm ||
+        source->sampleCount() != 1U || physicalAddress == 0U ||
+        completionId == 0U) {
+        SetError(error, "PICA Metal render-target capture received an unsupported source or producer identity");
+        return false;
+    }
+    const CaptureKey key{renderTargetNamespace, completionId, afterDrawSubmissionId};
+    if (mCapturedRenderTargets.contains(key)) {
+        SetError(error, "PICA Metal render-target producer identity was already captured");
+        return false;
+    }
+    const uint64_t bytes64 = uint64_t{source->width()} * source->height() * 4U;
+    if (bytes64 > std::numeric_limits<size_t>::max() ||
+        static_cast<size_t>(bytes64) > mBudgetBytes -
+            std::min(mBudgetBytes, mResidentBytes)) {
+        SetError(error, "PICA Metal render-target producer exceeds the retained GPU image budget");
+        return false;
+    }
+    MTL::TextureDescriptor* descriptor = MTL::TextureDescriptor::texture2DDescriptor(
+        MTL::PixelFormatRGBA8Unorm, source->width(), source->height(), false);
+    if (descriptor == nullptr) {
+        SetError(error, "Metal could not allocate the render-target capture descriptor");
+        return false;
+    }
+    descriptor->setStorageMode(MTL::StorageModePrivate);
+    descriptor->setUsage(MTL::TextureUsageShaderRead);
+    MTL::Texture* captured = device.Device()->newTexture(descriptor);
+    descriptor->release();
+    if (captured == nullptr) {
+        SetError(error, "Metal could not allocate the immutable render-target capture image");
+        return false;
+    }
+    MTL::BlitCommandEncoder* encoder = commandBuffer->blitCommandEncoder();
+    if (encoder == nullptr) {
+        captured->release();
+        SetError(error, "Metal could not create the render-target capture blit encoder");
+        return false;
+    }
+    encoder->copyFromTexture(
+        source, 0U, 0U, MTL::Origin(0U, 0U, 0U),
+        MTL::Size(source->width(), source->height(), 1U),
+        captured, 0U, 0U, MTL::Origin(0U, 0U, 0U));
+    encoder->endEncoding();
+    mCapturedRenderTargets.emplace(key, captured);
+    mResidentBytes += static_cast<size_t>(bytes64);
+    return true;
+}
+
+MTL::Texture* GfxMetalPicaDisplayTransferCache::FindCapturedRenderTarget(
+    uint64_t renderTargetNamespace,
+    uint64_t completionId,
+    uint64_t afterDrawSubmissionId) const {
+    const auto found = mCapturedRenderTargets.find(
+        CaptureKey{renderTargetNamespace, completionId, afterDrawSubmissionId});
+    return found != mCapturedRenderTargets.end() ? found->second : nullptr;
+}
 
 bool GfxMetalPicaDisplayTransferCache::EnsurePresentPipeline(
     GfxMetalPicaDevice& device,
