@@ -120,8 +120,12 @@ def main() -> int:
             "nextDrawable()" in metal_frame and
             "renderCommandEncoder" in metal_frame and
             "presentDrawable" in metal_frame and
-            "EndAndPresent" in metal_frame_header,
-            "the Metal frame context acquires, clears and presents drawables")
+            "EndAndPresent" in metal_frame_header and
+            "CommandBuffer() const" in metal_frame_header and
+            "EndEncoding(" in metal_frame and
+            "BeginDrawablePass(" in metal_frame and
+            "HasActiveEncoder() const" in metal_frame,
+            "the Metal frame context supports offscreen command encoders before final drawable presentation")
     require("gfx_metal_pica_render_target.mm" in source_runtime_cmake and
             "TextureUsageRenderTarget" in metal_render_target and
             "TextureUsageShaderRead" in metal_render_target and
