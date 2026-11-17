@@ -61,7 +61,6 @@ class GfxMetalPicaDisplayTransferCache {
     [[nodiscard]] bool EnsurePipeline(
         GfxMetalPicaDevice& device,
         std::string* error);
-    void PruneToBudget();
 
     MTL::Device* mDevice = nullptr;
     MTL::ComputePipelineState* mPipeline = nullptr;
