@@ -33,6 +33,11 @@ bool GfxMetalPicaBackend::Initialize(
         SetError(error, "Metal PICA backend cannot initialize during an active frame");
         return false;
     }
+    if (!mDevice.IsReady()) {
+        mDrawExecutor.ClearCaches();
+        mTextureCache.Clear();
+        mRenderTargetCache.Clear();
+    }
     return mDevice.Initialize(renderer, error);
 }
 
@@ -69,6 +74,9 @@ bool GfxMetalPicaBackend::Shutdown(std::string* error) {
         return false;
     }
     if (!mDevice.IsReady()) {
+        mDrawExecutor.ClearCaches();
+        mTextureCache.Clear();
+        mRenderTargetCache.Clear();
         return true;
     }
     if (!mDevice.WaitIdle(error)) {
