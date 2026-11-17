@@ -119,6 +119,9 @@ def main() -> int:
     require("gfx_metal_pica_backend.mm" in source_runtime_cmake and
             "class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend" in metal_backend_header and
             "GfxMetalPicaDrawExecutor::Encode" in metal_backend and
+            "draw.UberFragmentShaderSource" in metal_backend and
+            "fallback.CanonicalPipelineId = 0U" in metal_backend and
+            "fallback.FragmentShaderSourceIdentity = draw.UberFragmentShaderSourceIdentity" in metal_backend and
             "commandBuffer->commandQueue() != mDevice.CommandQueue()" in metal_backend and
             "mRenderTargetCache.Clear" in metal_backend and
             "mRenderTargetCache.SubmitMemoryFill" in metal_backend and
