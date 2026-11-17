@@ -341,6 +341,23 @@ bool GfxMetalPicaRenderTargetCache::ApplyPendingMemoryFills(
     return true;
 }
 
+GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::FindColorTarget(
+    uint64_t renderTargetNamespace,
+    uint32_t colorPhysicalAddress) {
+    auto newest = mEntries.end();
+    for (auto candidate = mEntries.begin(); candidate != mEntries.end(); ++candidate) {
+        if (candidate->first.RenderTargetNamespace != renderTargetNamespace ||
+            candidate->first.ColorPhysicalAddress != colorPhysicalAddress) {
+            continue;
+        }
+        if (newest == mEntries.end() ||
+            candidate->second.LastUsedFrame > newest->second.LastUsedFrame) {
+            newest = candidate;
+        }
+    }
+    return newest == mEntries.end() ? nullptr : newest->second.Target.get();
+}
+
 size_t GfxMetalPicaRenderTargetCache::EntryCount() const {
     return mEntries.size();
 }
