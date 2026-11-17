@@ -144,6 +144,10 @@ def main() -> int:
             "uint64_t renderTargetNamespace" in metal_display_transfer_header and
             "TextureCopyBytes" in metal_backend and
             "MaterializeGuest" in metal_backend and
+            "CaptureRenderTarget" in metal_backend and
+            "FindCapturedRenderTarget" in metal_display_transfer and
+            "copyFromTexture(" in metal_display_transfer and
+            "PICA Metal raw TextureCopy still requires native-byte encoding" in metal_backend and
             "EnsurePresentPipeline" in metal_display_transfer and
             "pica_present_vertex" in metal_display_transfer and
             "pica_present_fragment" in metal_display_transfer and
