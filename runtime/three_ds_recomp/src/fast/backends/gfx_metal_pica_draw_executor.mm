@@ -79,6 +79,102 @@ void GfxMetalPicaDrawExecutor::PruneShaderCache() {
     }
 }
 
+GfxMetalPicaPipeline* GfxMetalPicaDrawExecutor::ResolvePipeline(
+    GfxMetalPicaDevice& device,
+    MTL::VertexDescriptor* vertexDescriptor,
+    const Renderer3ds::PicaDrawView& draw,
+    uint32_t colorPixelFormat,
+    uint32_t depthPixelFormat,
+    std::unique_ptr<GfxMetalPicaPipeline>& transient,
+    std::string* error) {
+    const bool cacheable =
+        draw.CanonicalPipelineId != 0U &&
+        draw.CanonicalVertexProgramId != 0U &&
+        draw.CanonicalFragmentProgramId != 0U;
+    if (cacheable) {
+        const PipelineKey key{
+            draw.CanonicalPipelineId,
+            draw.CanonicalVertexProgramId,
+            draw.CanonicalFragmentProgramId,
+            draw.VertexShaderKey,
+            draw.FragmentShaderKey,
+            reinterpret_cast<uintptr_t>(device.Device()),
+            colorPixelFormat,
+            depthPixelFormat,
+        };
+        const auto found = mPipelineCache.find(key);
+        if (found != mPipelineCache.end()) {
+            found->second.LastUsed = ++mShaderCacheClock;
+            return found->second.Pipeline.get();
+        }
+
+        transient = std::make_unique<GfxMetalPicaPipeline>();
+        if (!transient->Create(
+                device.Device(),
+                nullptr,
+                nullptr,
+                vertexDescriptor,
+                colorPixelFormat,
+                depthPixelFormat,
+                1U,
+                &draw,
+                error)) {
+            transient.reset();
+            return nullptr;
+        }
+
+        CachedPipeline entry;
+        entry.Pipeline = std::move(transient);
+        entry.LastUsed = ++mShaderCacheClock;
+        auto [inserted, wasInserted] =
+            mPipelineCache.emplace(key, std::move(entry));
+        if (!wasInserted) {
+            SetError(error, "Metal PICA pipeline cache insertion failed");
+            return nullptr;
+        }
+        return inserted->second.Pipeline.get();
+    }
+
+    transient = std::make_unique<GfxMetalPicaPipeline>();
+    if (!transient->Create(
+            device.Device(),
+            nullptr,
+            nullptr,
+            vertexDescriptor,
+            colorPixelFormat,
+            depthPixelFormat,
+            1U,
+            &draw,
+            error)) {
+        transient.reset();
+        return nullptr;
+    }
+    return transient.get();
+}
+
+void GfxMetalPicaDrawExecutor::PrunePipelineCache() {
+    constexpr size_t kMaximumCachedPipelines = 256U;
+    while (mPipelineCache.size() > kMaximumCachedPipelines) {
+        const auto oldest = std::min_element(
+            mPipelineCache.begin(), mPipelineCache.end(),
+            [](const auto& left, const auto& right) {
+                return left.second.LastUsed < right.second.LastUsed;
+            });
+        if (oldest == mPipelineCache.end()) {
+            break;
+        }
+        mPipelineCache.erase(oldest);
+    }
+}
+
+void GfxMetalPicaDrawExecutor::ClearPipelineCache() {
+    mPipelineCache.clear();
+}
+
+size_t GfxMetalPicaDrawExecutor::CachedPipelineCount() const {
+    return mPipelineCache.size();
+}
+
 void GfxMetalPicaDrawExecutor::ClearShaderCache() {
     mShaderCache.clear();
     mShaderCacheClock = 0;
@@ -140,17 +236,12 @@ bool GfxMetalPicaDrawExecutor::Encode(
         return false;
     }
 
-    GfxMetalPicaPipeline pipeline;
-    if (!pipeline.Create(
-            device.Device(),
-            vertexShader->Shader->Function(),
-            fragmentShader->Shader->Function(),
-            vertexDescriptor,
-            colorPixelFormat,
-            depthPixelFormat,
-            1U,
-            &draw,
-            error)) {
+    std::unique_ptr<GfxMetalPicaPipeline> transientPipeline;
+    GfxMetalPicaPipeline* pipeline = ResolvePipeline(
+        device, vertexDescriptor, draw,
+        colorPixelFormat, depthPixelFormat,
+        transientPipeline, error);
+    if (pipeline == nullptr) {
         return false;
     }
 
@@ -162,11 +253,12 @@ bool GfxMetalPicaDrawExecutor::Encode(
     }
 
     const bool encoded = GfxMetalPicaDrawEncoder::Encode(
-        commandBuffer, *target, pipeline, resources, draw,
+        commandBuffer, *target, *pipeline, resources, draw,
         clearColor, clearDepth, clearStencil, error);
     vertexShader->LastUsed = ++mShaderCacheClock;
     fragmentShader->LastUsed = ++mShaderCacheClock;
     PruneShaderCache();
+    PrunePipelineCache();
     return encoded;
 }
 
