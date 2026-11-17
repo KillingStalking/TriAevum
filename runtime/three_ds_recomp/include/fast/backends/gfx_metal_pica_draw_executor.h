@@ -18,6 +18,7 @@
 
 namespace MTL {
 class CommandBuffer;
+class Function;
 }
 
 namespace Fast::Backends {
@@ -43,6 +44,8 @@ class GfxMetalPicaDrawExecutor {
 
     void ClearShaderCache();
     [[nodiscard]] size_t CachedShaderCount() const;
+    void ClearPipelineCache();
+    [[nodiscard]] size_t CachedPipelineCount() const;
 
   private:
     struct CachedShader {
@@ -61,6 +64,8 @@ class GfxMetalPicaDrawExecutor {
     void PruneShaderCache();
     [[nodiscard]] GfxMetalPicaPipeline* ResolvePipeline(
         GfxMetalPicaDevice& device,
+        MTL::Function* vertexFunction,
+        MTL::Function* fragmentFunction,
         MTL::VertexDescriptor* vertexDescriptor,
         const Renderer3ds::PicaDrawView& draw,
         uint32_t colorPixelFormat,
