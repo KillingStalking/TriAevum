@@ -7,6 +7,7 @@
 namespace MTL {
 class CommandBuffer;
 class RenderCommandEncoder;
+class Texture;
 }
 
 namespace CA {
@@ -41,6 +42,7 @@ class GfxMetalPicaFrame {
         std::string* error = nullptr);
     [[nodiscard]] MTL::RenderCommandEncoder* Encoder() const;
     [[nodiscard]] MTL::CommandBuffer* CommandBuffer() const;
+    [[nodiscard]] MTL::Texture* DrawableTexture() const;
     // End the initial drawable pass while keeping the drawable and command
     // buffer alive for ordered offscreen PICA work.
     [[nodiscard]] bool EndEncoding(std::string* error = nullptr);
