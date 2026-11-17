@@ -30,6 +30,8 @@ def main() -> int:
     metal_device_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_device.h")
     metal_backend = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_backend.mm")
     metal_backend_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_backend.h")
+    metal_display_transfer = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_display_transfer.mm")
+    metal_display_transfer_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_display_transfer.h")
     metal_frame = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_frame.mm")
     metal_frame_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_frame.h")
     metal_render_target = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_render_target.mm")
@@ -125,8 +127,21 @@ def main() -> int:
             "commandBuffer->commandQueue() != mDevice.CommandQueue()" in metal_backend and
             "mRenderTargetCache.Clear" in metal_backend and
             "mRenderTargetCache.SubmitMemoryFill" in metal_backend and
-            "native PICA Metal display transfers are not implemented yet" in metal_backend,
-            "the concrete Metal PICA backend owns draw, clear and memory-fill submission and fails closed for unimplemented display transfer")
+            "mDisplayTransferCache.Submit" in metal_backend and
+            "FindColorTarget" in metal_backend and
+            "FindDisplayTexture" in metal_backend and
+            "native PICA Metal display transfer cannot present" in metal_backend,
+            "the concrete Metal PICA backend owns draw, clear, memory-fill and offscreen display-transfer submission while refusing unconnected presentation")
+    require("gfx_metal_pica_display_transfer.mm" in source_runtime_cmake and
+            "BuildPicaDisplayTransferPlan" in metal_backend and
+            "newComputePipelineState" in metal_display_transfer and
+            "dispatchThreads" in metal_display_transfer and
+            "TextureUsageShaderWrite" in metal_display_transfer and
+            "PicaDisplayTransferView" in metal_display_transfer_header and
+            "Find(uint64_t renderTargetNamespace" in metal_display_transfer_header and
+            "TextureCopyBytes" in metal_backend and
+            "MaterializeGuest" in metal_backend,
+            "Metal executes ordered PICA display scaling/box filtering into retained GPU display images and rejects unsupported copy, readback and presentation paths");
     require("gfx_metal_pica_device.mm" in source_runtime_cmake and
             "GfxMetalPicaDevice::Initialize" in metal_device and
             "GfxMetalPicaDevice::WaitIdle" in metal_device and
