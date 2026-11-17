@@ -49,3 +49,22 @@ PR #16 is a useful implementation reference for macOS MoltenVK packaging and por
 ## Validation policy
 
 No iOS build, device launch, swapchain presentation, NRI initialization, or game boot is claimed by this audit. Each is a separate acceptance gate. The first code milestone should be the minimal Vulkan presentation probe, not a full game build.
+
+
+## MoltenVK dependency implementation
+
+The iOS Vulkan dependency is now isolated from the Android/macOS loader path:
+
+- `vulkan-compiler-dependencies.cmake` owns the pinned Vulkan-Headers, SPIR-V and shaderc build inputs.
+- `android-vulkan.cmake` reuses those compiler dependencies and locates the Android/desktop Vulkan loader as before.
+- `ios-vulkan.cmake` requires an explicitly supplied static `MoltenVK.xcframework`; it does not search for a system Vulkan loader.
+- `scripts/ios/build_moltenvk.sh` checks out MoltenVK at commit `5189f8de86ec365860f63bf1da736815cfaea5cd`, builds its iOS dependencies, and runs the official `make ios` packaging target.
+- `.github/workflows/ios-moltenvk-dependency.yml` runs that build on a macOS runner and publishes the XCFramework as a 14-day workflow artifact.
+
+Local macOS command:
+
+```sh
+bash scripts/ios/build_moltenvk.sh
+```
+
+The script prints the exact `THREE_DS_RECOMP_MOLTENVK_XCFRAMEWORK` path to pass to the iOS CMake configure step. This dependency-only workflow is not a TriAevum iOS app build and does not claim that the renderer or game launches yet.
