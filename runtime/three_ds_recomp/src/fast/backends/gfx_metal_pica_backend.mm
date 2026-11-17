@@ -4,6 +4,8 @@
 
 #include <Metal/Metal.hpp>
 
+#include "fast/extension/pica_display_transfer.h"
+
 #include <cassert>
 
 namespace Fast::Backends {
@@ -37,6 +39,7 @@ bool GfxMetalPicaBackend::Initialize(
         mDrawExecutor.ClearCaches();
         mTextureCache.Clear();
         mRenderTargetCache.Clear();
+        mDisplayTransferCache.Clear();
     }
     return mDevice.Initialize(renderer, error);
 }
@@ -77,6 +80,7 @@ bool GfxMetalPicaBackend::Shutdown(std::string* error) {
         mDrawExecutor.ClearCaches();
         mTextureCache.Clear();
         mRenderTargetCache.Clear();
+        mDisplayTransferCache.Clear();
         return true;
     }
     if (!mDevice.WaitIdle(error)) {
@@ -85,6 +89,7 @@ bool GfxMetalPicaBackend::Shutdown(std::string* error) {
     mDrawExecutor.ClearCaches();
     mTextureCache.Clear();
     mRenderTargetCache.Clear();
+    mDisplayTransferCache.Clear();
     mDevice.Shutdown();
     return true;
 }
@@ -125,9 +130,63 @@ bool GfxMetalPicaBackend::SubmitPicaDraw(
 bool GfxMetalPicaBackend::SubmitPicaDisplayTransfer(
     const Renderer3ds::PicaDisplayTransferView& transfer,
     std::string* error) {
-    (void)transfer;
-    SetError(error, "native PICA Metal display transfers are not implemented yet");
-    return false;
+    if (!HasActiveFrame()) {
+        SetError(error, "native PICA Metal display transfer submitted outside an active frame");
+        return false;
+    }
+    if (transfer.TextureCopyBytes != 0U || transfer.RenderTargetCapture) {
+        SetError(error, "native PICA Metal display transfer cannot yet execute ordered GPU texture-copy or render-target-capture producers");
+        return false;
+    }
+    if (transfer.Present) {
+        SetError(error, "native PICA Metal display transfer cannot present until the runtime supplies its active drawable texture");
+        return false;
+    }
+    if (transfer.MaterializeGuest) {
+        SetError(error, "native PICA Metal display transfer cannot complete a guest-visible write until asynchronous readback and physical-memory commit are connected");
+        return false;
+    }
+    if (transfer.CompletionId == 0U ||
+        transfer.InputPhysicalAddress == 0U ||
+        transfer.OutputPhysicalAddress == 0U ||
+        transfer.InputWidth == 0U || transfer.InputHeight == 0U ||
+        transfer.OutputWidth == 0U || transfer.OutputHeight == 0U) {
+        SetError(error, "native PICA Metal display transfer has an incomplete guest identity or extent");
+        return false;
+    }
+
+    GfxMetalPicaRenderTarget* source = mRenderTargetCache.FindColorTarget(
+        transfer.RenderTargetNamespace, transfer.InputPhysicalAddress);
+    if (source == nullptr) {
+        SetError(error, "native PICA Metal display transfer source framebuffer has not been rendered");
+        return false;
+    }
+    if (transfer.InputWidth > source->Width() ||
+        transfer.InputHeight > source->Height()) {
+        SetError(error, "native PICA Metal display transfer exceeds its source framebuffer");
+        return false;
+    }
+
+    std::string planError;
+    const auto plan = Extension::BuildPicaDisplayTransferPlan({
+        transfer.InputWidth,
+        transfer.InputHeight,
+        transfer.OutputWidth,
+        transfer.OutputHeight,
+        source->Width(),
+        source->Height(),
+        transfer.Flags,
+        false,
+    }, &planError);
+    if (!plan.has_value()) {
+        if (error != nullptr) {
+            *error = "native PICA Metal display-transfer plan failed: " + planError;
+        }
+        return false;
+    }
+    return mDisplayTransferCache.Submit(
+        mDevice, mCommandBuffer, source->ColorTexture(),
+        transfer, *plan, error);
 }
 
 bool GfxMetalPicaBackend::ClearPicaRenderTarget(
@@ -168,6 +227,7 @@ bool GfxMetalPicaBackend::ResetPicaState(std::string* error) {
     mDrawExecutor.ClearCaches();
     mTextureCache.Clear();
     mRenderTargetCache.Clear();
+    mDisplayTransferCache.Clear();
     return true;
 }
 
@@ -181,6 +241,13 @@ bool GfxMetalPicaBackend::HasActiveFrame() const {
 
 GfxMetalPicaDevice& GfxMetalPicaBackend::Device() {
     return mDevice;
+}
+
+MTL::Texture* GfxMetalPicaBackend::FindDisplayTexture(
+    uint64_t renderTargetNamespace,
+    uint32_t outputPhysicalAddress) const {
+    return mDisplayTransferCache.Find(
+        renderTargetNamespace, outputPhysicalAddress);
 }
 
 } // namespace Fast::Backends
