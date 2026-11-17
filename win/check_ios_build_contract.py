@@ -40,6 +40,8 @@ def main() -> int:
     metal_draw_resources_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_draw_resources.h")
     metal_draw_encoder = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_draw_encoder.mm")
     metal_draw_encoder_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_draw_encoder.h")
+    metal_draw_executor = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_draw_executor.mm")
+    metal_draw_executor_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_draw_executor.h")
     metal_pipeline = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_pipeline.mm")
     metal_pipeline_header = read("runtime/three_ds_recomp/include/fast/backends/gfx_metal_pica_pipeline.h")
     metal_shader_compile = read("runtime/three_ds_recomp/src/fast/backends/gfx_metal_pica_shader.mm")
@@ -197,6 +199,17 @@ def main() -> int:
             "ExcludePicaScissor(fullTarget, excluded)" in metal_draw_encoder and
             "encoder->setScissorRect(metalScissor)" in metal_draw_encoder,
             "the ordered Metal PICA draw encoder binds resources and applies only finite, non-empty PICA viewport state")
+    require("gfx_metal_pica_draw_executor.mm" in source_runtime_cmake and
+            "TranslatePicaGlslToMsl" in metal_draw_executor and
+            "vertexShader.Compile" in metal_draw_executor and
+            "fragmentShader.Compile" in metal_draw_executor and
+            "resources.Prepare" in metal_draw_executor and
+            "resources.VertexDescriptor()" in metal_draw_executor and
+            "pipeline.Create" in metal_draw_executor and
+            "renderTargetCache.Resolve" in metal_draw_executor and
+            "GfxMetalPicaDrawEncoder::Encode" in metal_draw_executor and
+            "colorPixelFormat" in metal_draw_executor_header,
+            "the Metal PICA draw executor translates both shader stages, prepares descriptors/resources, creates the matching pipeline and encodes into a cached target")
     require("gfx_metal_pica_pipeline.mm" in source_runtime_cmake and
             "newRenderPipelineState" in metal_pipeline and
             "setRenderPipelineState" in metal_pipeline and
