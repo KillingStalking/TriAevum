@@ -1,5 +1,7 @@
 #include "fast/backends/gfx_metal_pica_render_target_cache.h"
 
+#include "fast/renderer3ds/pica_memory_fill_decode.h"
+
 #include <algorithm>
 #include <limits>
 #include <utility>
@@ -88,12 +90,13 @@ GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::Resolve(
     uint32_t metalColorPixelFormat,
     uint32_t metalDepthPixelFormat,
     uint32_t metalStencilPixelFormat,
+    MTL::CommandBuffer* commandBuffer,
     std::string* error) {
     if (error != nullptr) {
         error->clear();
     }
-    if (!device.IsReady()) {
-        SetError(error, "PICA Metal render-target cache requires an initialized device");
+    if (!device.IsReady() || commandBuffer == nullptr) {
+        SetError(error, "PICA Metal render-target cache requires an initialized device and active command buffer");
         return nullptr;
     }
     if (mDevice != nullptr && mDevice != device.Device()) {
@@ -135,6 +138,10 @@ GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::Resolve(
     const auto found = mEntries.find(key);
     if (found != mEntries.end()) {
         found->second.LastUsedFrame = mCurrentFrame;
+        if (!ApplyPendingMemoryFills(
+                key, found->second, commandBuffer, error)) {
+            return nullptr;
+        }
         return found->second.Target.get();
     }
 
@@ -171,8 +178,124 @@ GfxMetalPicaRenderTarget* GfxMetalPicaRenderTargetCache::Resolve(
     }
     mResidentBytes += inserted->second.Bytes;
     mDevice = device.Device();
+    if (!ApplyPendingMemoryFills(
+            inserted->first, inserted->second, commandBuffer, error)) {
+        return nullptr;
+    }
     EvictToBudget();
     return inserted->second.Target.get();
+}
+
+bool GfxMetalPicaRenderTargetCache::SubmitMemoryFill(
+    const Renderer3ds::PicaMemoryFillView& fill,
+    MTL::CommandBuffer* commandBuffer,
+    std::string* error) {
+    if (error != nullptr) {
+        error->clear();
+    }
+    if (commandBuffer == nullptr || fill.StartPhysicalAddress == 0U ||
+        fill.EndPhysicalAddress <= fill.StartPhysicalAddress ||
+        (fill.Control & 1U) == 0U) {
+        SetError(error, "native PICA Metal memory fill is incomplete");
+        return false;
+    }
+
+    const auto previous = std::find_if(
+        mPendingMemoryFills.begin(), mPendingMemoryFills.end(),
+        [&](const auto& pending) {
+            return pending.StartPhysicalAddress == fill.StartPhysicalAddress &&
+                   pending.EndPhysicalAddress == fill.EndPhysicalAddress &&
+                   pending.RenderTargetNamespace == fill.RenderTargetNamespace;
+        });
+    if (previous != mPendingMemoryFills.end()) {
+        *previous = fill;
+    } else {
+        mPendingMemoryFills.push_back(fill);
+    }
+
+    for (auto& [key, entry] : mEntries) {
+        if (key.RenderTargetNamespace != fill.RenderTargetNamespace) {
+            continue;
+        }
+        if (!ApplyPendingMemoryFills(key, entry, commandBuffer, error)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool GfxMetalPicaRenderTargetCache::ApplyPendingMemoryFills(
+    const Key& key,
+    Entry& entry,
+    MTL::CommandBuffer* commandBuffer,
+    std::string* error) {
+    if (mPendingMemoryFills.empty()) {
+        return true;
+    }
+    if (commandBuffer == nullptr) {
+        SetError(error, "native PICA Metal memory fill has no command buffer");
+        return false;
+    }
+
+    const uint64_t pixelCount =
+        static_cast<uint64_t>(key.Width) * key.Height;
+    const uint64_t colorEnd =
+        static_cast<uint64_t>(key.ColorPhysicalAddress) +
+        pixelCount * Renderer3ds::PicaColorBytesPerPixel(
+            key.NativeColorFormat);
+    const uint64_t depthEnd = key.DepthPhysicalAddress != 0U
+        ? static_cast<uint64_t>(key.DepthPhysicalAddress) +
+              pixelCount * Renderer3ds::PicaDepthBytesPerPixel(
+                  key.NativeDepthFormat)
+        : 0U;
+
+    auto fill = mPendingMemoryFills.begin();
+    while (fill != mPendingMemoryFills.end()) {
+        if (fill->RenderTargetNamespace != key.RenderTargetNamespace) {
+            ++fill;
+            continue;
+        }
+        const bool coversColor =
+            fill->StartPhysicalAddress <= key.ColorPhysicalAddress &&
+            fill->EndPhysicalAddress >= colorEnd;
+        const bool coversDepth =
+            key.DepthPhysicalAddress != 0U &&
+            fill->StartPhysicalAddress <= key.DepthPhysicalAddress &&
+            fill->EndPhysicalAddress >= depthEnd;
+        if (!coversColor && !coversDepth) {
+            ++fill;
+            continue;
+        }
+
+        GfxMetalPicaRenderTargetClearValues clearValues;
+        if (coversColor) {
+            clearValues.Color =
+                Renderer3ds::DecodePicaMemoryFillColor(
+                    *fill, key.NativeColorFormat).Value;
+        }
+        if (coversDepth) {
+            const auto decoded =
+                Renderer3ds::DecodePicaMemoryFillDepthStencil(
+                    *fill, key.NativeDepthFormat);
+            clearValues.Depth = decoded.Depth;
+            clearValues.Stencil = decoded.Stencil;
+        }
+
+        auto& target = *entry.Target;
+        if (!target.Begin(
+                commandBuffer,
+                coversColor,
+                coversDepth,
+                coversDepth && key.NativeDepthFormat == 3U,
+                clearValues,
+                error)) {
+            return false;
+        }
+        target.End();
+        entry.LastUsedFrame = mCurrentFrame;
+        fill = mPendingMemoryFills.erase(fill);
+    }
+    return true;
 }
 
 void GfxMetalPicaRenderTargetCache::EvictToBudget() {
