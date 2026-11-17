@@ -63,6 +63,7 @@ class GfxMetalPicaDrawExecutor {
     void ClearShaderCache();
     [[nodiscard]] size_t CachedShaderCount() const;
     void ClearPipelineCache();
+    void ClearCaches();
     [[nodiscard]] size_t CachedPipelineCount() const;
 
   private:
