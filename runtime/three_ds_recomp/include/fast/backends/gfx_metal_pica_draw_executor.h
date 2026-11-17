@@ -9,11 +9,11 @@
 #include <string_view>
 
 #include "fast/backends/gfx_metal_pica_device.h"
-#include "fast/backends/gfx_metal_pica_shader.h"
 #include "fast/backends/gfx_metal_pica_pipeline.h"
-#include "fast/renderer3ds/pica_msl_shader.h"
 #include "fast/backends/gfx_metal_pica_render_target_cache.h"
+#include "fast/backends/gfx_metal_pica_shader.h"
 #include "fast/backends/gfx_metal_pica_texture_cache.h"
+#include "fast/renderer3ds/pica_msl_shader.h"
 #include "fast/renderer3ds/pica_render_backend.h"
 
 namespace MTL {
