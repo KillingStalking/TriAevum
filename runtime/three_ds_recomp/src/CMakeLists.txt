@@ -60,6 +60,7 @@ if(THREE_DS_RECOMP_ENABLE_METAL_PICA)
         fast/backends/gfx_metal_pica_argument_buffer.mm
         fast/backends/gfx_metal_pica_draw_resources.mm
         fast/backends/gfx_metal_pica_draw_encoder.mm
+        fast/backends/gfx_metal_pica_draw_executor.mm
         fast/backends/gfx_metal_pica_pipeline.mm
         fast/backends/gfx_metal_pica_shader.mm
         fast/backends/gfx_metal_pica_vertex_input.mm
