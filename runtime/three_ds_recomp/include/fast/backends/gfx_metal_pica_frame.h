@@ -40,9 +40,19 @@ class GfxMetalPicaFrame {
         GfxMetalPicaClearColor clearColor = {},
         std::string* error = nullptr);
     [[nodiscard]] MTL::RenderCommandEncoder* Encoder() const;
+    [[nodiscard]] MTL::CommandBuffer* CommandBuffer() const;
+    // End the initial drawable pass while keeping the drawable and command
+    // buffer alive for ordered offscreen PICA work.
+    [[nodiscard]] bool EndEncoding(std::string* error = nullptr);
+    // Reopen the drawable for the final presentation/composition pass.
+    [[nodiscard]] bool BeginDrawablePass(
+        GfxMetalPicaClearColor clearColor = {},
+        bool clear = true,
+        std::string* error = nullptr);
     [[nodiscard]] bool EndAndPresent(std::string* error = nullptr);
     void Cancel();
     [[nodiscard]] bool IsActive() const;
+    [[nodiscard]] bool HasActiveEncoder() const;
 
   private:
     NS::AutoreleasePool* mAutoreleasePool = nullptr;
