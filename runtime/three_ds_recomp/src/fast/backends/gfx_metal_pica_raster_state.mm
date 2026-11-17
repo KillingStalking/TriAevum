@@ -172,11 +172,11 @@ bool BindPicaMetalRasterState(
         cullMode == Renderer3ds::NativeCullMode::KeepAll
             ? MTL::CullModeNone
             : (framebufferFlipped ? MTL::CullModeFront : MTL::CullModeBack));
-    // Metal's front-facing winding is the winding retained by CullModeBack.
-    // Keep the PICA-selected orientation; framebufferFlipped above swaps the
-    // culled side when the target's raster orientation is inverted.
+    // Match the PICA-to-renderer front-face convention used by the Vulkan
+    // backend; the translated shader/viewport coordinate system is not the
+    // same as interpreting the enum name as a Metal winding value directly.
     encoder->setFrontFacingWinding(
-        cullMode == Renderer3ds::NativeCullMode::KeepClockwise
+        cullMode == Renderer3ds::NativeCullMode::KeepCounterClockwise
             ? MTL::WindingClockwise
             : MTL::WindingCounterClockwise);
     encoder->setBlendColor(
