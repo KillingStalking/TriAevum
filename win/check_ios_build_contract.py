@@ -208,6 +208,8 @@ def main() -> int:
             "draw.FramebufferDepthFormat == 3U" in metal_draw_executor and
             "draw.FramebufferDepthFormat == 3U" in metal_render_target_cache and
             "PixelFormatDepth32Float_Stencil8" in metal_pipeline and
+            "mStencilPixelFormat =" in metal_pipeline and
+            "PixelFormatDepth32Float_Stencil8" in metal_pipeline_header + metal_pipeline and
             "mShaderCache" in metal_draw_executor_header and
             "kMaximumCachedShaders = 128U" in metal_draw_executor and
             "kMaximumCachedPipelines = 256U" in metal_draw_executor and
