@@ -120,7 +120,7 @@ def main() -> int:
             "the Windows build driver compiles the Metal shader translator")
     require("gfx_metal_pica_backend.mm" in source_runtime_cmake and
             "class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend" in metal_backend_header and
-            "GfxMetalPicaDrawExecutor::Encode" in metal_backend and
+            "mDrawExecutor.Encode(" in metal_backend and
             "draw.UberFragmentShaderSource" in metal_backend and
             "fallback.CanonicalPipelineId = 0U" in metal_backend and
             "fallback.FragmentShaderSourceIdentity = draw.UberFragmentShaderSourceIdentity" in metal_backend and
