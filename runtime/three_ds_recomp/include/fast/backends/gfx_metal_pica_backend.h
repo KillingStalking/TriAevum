@@ -59,7 +59,6 @@ class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend {
     [[nodiscard]] bool SetPinnedPicaTextureCopies(
         std::span<const Renderer3ds::PicaTextureCopyReference> copies,
         std::string* error = nullptr) override;
-    void SetCanonicalPicaRenderTargetNamespace(uint64_t renderTargetNamespace) override;
     [[nodiscard]] bool ResetPicaState(
         std::string* error = nullptr) override;
 
@@ -79,7 +78,6 @@ class GfxMetalPicaBackend final : public Renderer3ds::PicaRenderBackend {
     MTL::CommandBuffer* mCommandBuffer = nullptr;
     MTL::Texture* mDrawableTexture = nullptr;
     uint64_t mFrameIndex = 0;
-    uint64_t mCanonicalRenderTargetNamespace = 0;
 };
 
 } // namespace Fast::Backends
