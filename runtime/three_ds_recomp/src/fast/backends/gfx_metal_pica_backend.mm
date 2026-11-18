@@ -260,17 +260,7 @@ bool GfxMetalPicaBackend::SetPinnedPicaTextureCopies(
     std::span<const Renderer3ds::PicaTextureCopyReference> copies,
     std::string* error) {
     if (error != nullptr) error->clear();
-    if (HasActiveFrame()) {
-        SetError(error, "native PICA Metal producer pins cannot change during an active frame");
-        return false;
-    }
-    return mDisplayTransferCache.SetPinnedCaptures(
-        mCanonicalRenderTargetNamespace, copies, error);
-}
-
-void GfxMetalPicaBackend::SetCanonicalPicaRenderTargetNamespace(
-    uint64_t renderTargetNamespace) {
-    mCanonicalRenderTargetNamespace = renderTargetNamespace;
+    return mDisplayTransferCache.SetPinnedCaptures(copies, error);
 }
 
 bool GfxMetalPicaBackend::ResetPicaState(std::string* error) {
@@ -288,7 +278,6 @@ bool GfxMetalPicaBackend::ResetPicaState(std::string* error) {
     mTextureCache.Clear();
     mRenderTargetCache.Clear();
     mDisplayTransferCache.Clear();
-    mCanonicalRenderTargetNamespace = 0U;
     return true;
 }
 
