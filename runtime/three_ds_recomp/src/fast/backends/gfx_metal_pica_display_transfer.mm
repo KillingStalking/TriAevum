@@ -104,7 +104,7 @@ void GfxMetalPicaDisplayTransferCache::Clear() {
         if (texture != nullptr) texture->release();
     }
     mCapturedRenderTargets.clear();
-    mPinnedCapturedRenderTargets.clear();
+    mPinnedCompletionIds.clear();
     mHasPinnedCaptureSet = false;
     mResidentBytes = 0;
     if (mPipeline != nullptr) {
@@ -120,34 +120,29 @@ void GfxMetalPicaDisplayTransferCache::Clear() {
 }
 
 bool GfxMetalPicaDisplayTransferCache::SetPinnedCaptures(
-    uint64_t renderTargetNamespace,
     std::span<const Renderer3ds::PicaTextureCopyReference> copies,
     std::string* error) {
     if (error != nullptr) error->clear();
-    if (renderTargetNamespace == 0U && !copies.empty()) {
-        SetError(error, "PICA Metal producer pins require a canonical render-target namespace");
-        return false;
-    }
 
-    std::set<CaptureKey> pinned;
+    // CompletionId is the renderer's stable producer identity across target
+    // namespaces and draw-boundary versions. The physical subrange is carried
+    // for the texture plan but does not narrow producer lifetime.
+    std::set<uint64_t> pinned;
     for (const auto& copy : copies) {
-        const uint64_t end = uint64_t{copy.PhysicalAddress} + copy.ByteCount;
-        if (copy.CompletionId == 0U || copy.PhysicalAddress == 0U ||
-            copy.ByteCount == 0U || end > (uint64_t{1} << 32U)) {
-            SetError(error, "PICA Metal producer pin contains an invalid identity or byte range");
+        if (copy.CompletionId == 0U) {
+            SetError(error, "PICA Metal producer pin contains an invalid completion identity");
             return false;
         }
-        pinned.emplace(renderTargetNamespace, copy.CompletionId,
-                       copy.AfterDrawSubmissionId);
+        pinned.insert(copy.CompletionId);
     }
 
-    // The map owns the only long-lived reference to each immutable capture.
-    // Metal command buffers retain resources already encoded into their work,
-    // so dropping an unpinned cache reference cannot invalidate submitted GPU
-    // commands; the current plan remains the authority for future lookups.
+    // Metal command buffers retain resources referenced by encoded commands.
+    // It is therefore safe to drop this cache's ownership when a producer is
+    // no longer reachable by a retained texture plan, including during a
+    // frame; already-encoded work keeps its own reference until completion.
     for (auto it = mCapturedRenderTargets.begin();
          it != mCapturedRenderTargets.end();) {
-        if (pinned.contains(it->first)) {
+        if (pinned.contains(std::get<1>(it->first))) {
             ++it;
             continue;
         }
@@ -163,7 +158,7 @@ bool GfxMetalPicaDisplayTransferCache::SetPinnedCaptures(
         }
         it = mCapturedRenderTargets.erase(it);
     }
-    mPinnedCapturedRenderTargets = std::move(pinned);
+    mPinnedCompletionIds = std::move(pinned);
     mHasPinnedCaptureSet = true;
     return true;
 }
@@ -344,7 +339,7 @@ bool GfxMetalPicaDisplayTransferCache::CaptureRenderTarget(
     }
     const CaptureKey key{renderTargetNamespace, completionId, afterDrawSubmissionId};
     if (mHasPinnedCaptureSet &&
-        !mPinnedCapturedRenderTargets.contains(key)) {
+        !mPinnedCompletionIds.contains(completionId)) {
         SetError(error, "PICA Metal render-target producer is not pinned by the active texture plan");
         return false;
     }
