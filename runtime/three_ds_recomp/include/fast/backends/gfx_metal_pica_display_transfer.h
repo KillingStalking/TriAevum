@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <set>
+#include <span>
 #include <string>
 #include <tuple>
 
@@ -34,6 +36,12 @@ class GfxMetalPicaDisplayTransferCache {
     GfxMetalPicaDisplayTransferCache& operator=(const GfxMetalPicaDisplayTransferCache&) = delete;
 
     void Clear();
+    // Retain only immutable producer captures referenced by the current native
+    // texture plan. An empty set is an explicit release of all prior captures.
+    [[nodiscard]] bool SetPinnedCaptures(
+        uint64_t renderTargetNamespace,
+        std::span<const Renderer3ds::PicaTextureCopyReference> copies,
+        std::string* error = nullptr);
     [[nodiscard]] bool Submit(
         GfxMetalPicaDevice& device,
         MTL::CommandBuffer* commandBuffer,
@@ -95,6 +103,8 @@ class GfxMetalPicaDisplayTransferCache {
     std::map<uint64_t, MTL::RenderPipelineState*> mPresentPipelines;
     std::map<Key, Entry> mEntries;
     std::map<CaptureKey, MTL::Texture*> mCapturedRenderTargets;
+    std::set<CaptureKey> mPinnedCapturedRenderTargets;
+    bool mHasPinnedCaptureSet = false;
     size_t mResidentBytes = 0;
     size_t mBudgetBytes = kDefaultBudgetBytes;
     uint64_t mFrame = 0;
