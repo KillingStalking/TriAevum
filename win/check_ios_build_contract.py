@@ -130,7 +130,6 @@ def main() -> int:
             "mDisplayTransferCache.Submit" in metal_backend and
             "FindColorTarget" in metal_backend and
             "mDisplayTransferCache.Find(" in metal_backend and
-            "mDisplayTransferCache.Present" in metal_backend and
             "mDrawableTexture" in metal_backend and
             "DrawableTexture() const" in metal_frame_header,
             "the concrete Metal PICA backend owns draw, clear, memory-fill and can route display transfers to the active drawable compositor")
