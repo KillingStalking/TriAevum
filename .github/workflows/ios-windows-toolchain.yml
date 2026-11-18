@@ -1,0 +1,27 @@
+name: Windows iOS toolchain checks
+
+on:
+  pull_request:
+    branches:
+      - feature/ios-moltenvk-port
+  workflow_dispatch:
+
+jobs:
+  static-checks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: lukka/get-cmake@latest
+      - name: Install Ninja
+        run: python -m pip install ninja
+      - name: Check Python syntax
+        run: python -m py_compile win/doctor.py win/build_ios.py
+      - name: Check build driver interface
+        run: python win/build_ios.py --help
+      - name: Check iOS build contracts
+        run: python win/check_ios_build_contract.py

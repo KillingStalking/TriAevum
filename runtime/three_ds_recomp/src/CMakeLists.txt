@@ -48,6 +48,46 @@ endif()
 
 add_subdirectory("fast")
 
+if(THREE_DS_RECOMP_ENABLE_METAL_PICA)
+    find_library(THREE_DS_RECOMP_METAL_FRAMEWORK Metal REQUIRED)
+    find_library(THREE_DS_RECOMP_QUARTZCORE_FRAMEWORK QuartzCore REQUIRED)
+    add_library(oot3d_metal_shader_translation STATIC
+        fast/renderer3ds/pica_msl_shader.cpp
+        fast/backends/gfx_metal_pica_device.mm
+        fast/backends/gfx_metal_pica_backend.mm
+        fast/backends/gfx_metal_pica_display_transfer.mm
+        fast/backends/gfx_metal_pica_frame.mm
+        fast/backends/gfx_metal_pica_render_target.mm
+        fast/backends/gfx_metal_pica_render_target_cache.mm
+        fast/backends/gfx_metal_pica_argument_buffer.mm
+        fast/backends/gfx_metal_pica_draw_resources.mm
+        fast/backends/gfx_metal_pica_draw_encoder.mm
+        fast/backends/gfx_metal_pica_draw_executor.mm
+        fast/backends/gfx_metal_pica_pipeline.mm
+        fast/backends/gfx_metal_pica_shader.mm
+        fast/backends/gfx_metal_pica_vertex_input.mm
+        fast/backends/gfx_metal_pica_texture.mm
+        fast/backends/gfx_metal_pica_texture_cache.mm
+        fast/backends/gfx_metal_pica_depth_stencil.mm
+        fast/backends/gfx_metal_pica_raster_state.mm)
+    target_compile_features(oot3d_metal_shader_translation PUBLIC cxx_std_20)
+    target_include_directories(oot3d_metal_shader_translation
+        PUBLIC ${INCLUDE_DIR}
+        PRIVATE ${metalcpp_SOURCE_DIR})
+    target_link_libraries(oot3d_metal_shader_translation
+        PRIVATE
+            spirv-cross-msl
+            three_ds_recomp_shaderc
+            ThreeDsRecomp::PicaShaderContract
+            oot3d_renderer_texture_decode
+            SDL2::SDL2-static
+            ${THREE_DS_RECOMP_METAL_FRAMEWORK}
+            ${THREE_DS_RECOMP_QUARTZCORE_FRAMEWORK})
+    # Compile the native Metal foundation as part of the runtime archive.
+    target_link_libraries(three_ds_recomp_runtime PRIVATE
+        oot3d_metal_shader_translation)
+endif()
+
 #=================== Legacy compatibility ===================
 
 add_subdirectory("legacy_compat")
@@ -88,6 +128,7 @@ target_link_libraries(three_ds_recomp_runtime
     PRIVATE
         ThreeDsRecomp::RendererExtensionCore
         ThreeDsRecomp::Renderer3dsPicaCore
+        ThreeDsRecomp::PicaShaderContract
         oot3d_renderer_texture_decode
         oot3d_renderer_fragment_lighting
 )
@@ -251,6 +292,7 @@ target_compile_definitions(three_ds_recomp_runtime PRIVATE
     $<$<BOOL:${THREE_DS_RECOMP_ENABLE_NRI}>:ENABLE_OOT3D_NRI>
     $<$<BOOL:${THREE_DS_RECOMP_ENABLE_VULKAN}>:ENABLE_RENDERER3DS_VULKAN>
     $<$<BOOL:${THREE_DS_RECOMP_ENABLE_NRI}>:ENABLE_RENDERER3DS_NRI>
+    $<$<BOOL:${THREE_DS_RECOMP_ENABLE_METAL_PICA}>:ENABLE_OOT3D_METAL_PICA>
     $<$<BOOL:${THREE_DS_RECOMP_ENABLE_D3D12_NGX_PROVIDER}>:ENABLE_OOT3D_D3D12_NGX_PROVIDER>
 )
 
@@ -292,7 +334,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
         __IOS__
     )
 
-    set_xcode_property(${PROJECT_NAME} PRODUCT_BUNDLE_IDENTIFIER ${BUNDLE_ID} All)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BUNDLE_ID}"
+    )
 
     if(NOT SIGN_LIBRARY)
         set_target_properties(${PROJECT_NAME} PROPERTIES

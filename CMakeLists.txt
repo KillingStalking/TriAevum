@@ -6,7 +6,7 @@ endif()
 set(CMAKE_CXX_STANDARD 20 CACHE STRING "The C++ standard to use")
 set(CMAKE_C_STANDARD 23 CACHE STRING "The C standard to use")
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0" CACHE STRING "Minimum macOS deployment version (Apple Silicon, Vulkan 1.3 through MoltenVK)")
+set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0" CACHE STRING "Minimum macOS deployment version")
 
 project(Oot3dRecomp VERSION 0.1.0 LANGUAGES C CXX)
 if(MSVC)

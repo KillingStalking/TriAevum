@@ -4406,17 +4406,16 @@ bool GfxRenderingAPIVulkan::SubmitPicaMemoryFill(
             (fill.Control & 1U) == 0U) {
             throw std::runtime_error("native PICA memory fill is incomplete");
         }
-        const auto previous = std::find_if(
-            mPendingNativePicaMemoryFills.begin(),
-            mPendingNativePicaMemoryFills.end(),
-            [&](const auto& pending) {
-                return pending.StartPhysicalAddress == fill.StartPhysicalAddress &&
-                       pending.EndPhysicalAddress == fill.EndPhysicalAddress &&
-                       pending.RenderTargetNamespace ==
-                           fill.RenderTargetNamespace;
-            });
-        if (previous != mPendingNativePicaMemoryFills.end()) {
-            *previous = fill;
+        const bool replacesAdjacentFill =
+            !mPendingNativePicaMemoryFills.empty() &&
+            mPendingNativePicaMemoryFills.back().StartPhysicalAddress ==
+                fill.StartPhysicalAddress &&
+            mPendingNativePicaMemoryFills.back().EndPhysicalAddress ==
+                fill.EndPhysicalAddress &&
+            mPendingNativePicaMemoryFills.back().RenderTargetNamespace ==
+                fill.RenderTargetNamespace;
+        if (replacesAdjacentFill) {
+            mPendingNativePicaMemoryFills.back() = fill;
         } else {
             mPendingNativePicaMemoryFills.push_back(fill);
         }

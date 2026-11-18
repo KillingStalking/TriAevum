@@ -1,0 +1,36 @@
+name: iOS Metal shader translation build
+
+on:
+  pull_request:
+    branches:
+      - feature/ios-moltenvk-port
+  workflow_dispatch:
+
+jobs:
+  ios-metal-translation:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Install Ninja
+        run: brew install ninja
+      - name: Configure iOS device build
+        run: >-
+          cmake -S . -B build-ios-metal -G Ninja
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/ios-apple.cmake
+          -DCMAKE_BUILD_TYPE=Release
+          -DOOT3D_ENABLE_VULKAN_RENDERER=OFF
+          -DTHREE_DS_RECOMP_ENABLE_VULKAN=OFF
+          -DTHREE_DS_RECOMP_ENABLE_METAL_PICA=ON
+          -DTHREE_DS_RECOMP_ENABLE_NRI=OFF
+          -DTHREE_DS_RECOMP_ENABLE_NRI_UPSCALER_SDKS=OFF
+          -DTHREE_DS_RECOMP_ENABLE_DLSS_MODULE=OFF
+          -DTHREE_DS_RECOMP_ENABLE_SSSR=OFF
+          -DTHREE_DS_RECOMP_ENABLE_CACAO=OFF
+          -DTHREE_DS_RECOMP_ENABLE_IMMERSE=OFF
+          -DTHREE_DS_RECOMP_BUILD_TESTS=OFF
+      - name: Build the Metal shader translation target
+        run: cmake --build build-ios-metal --target oot3d_metal_shader_translation --parallel 4
+      - name: Build iOS runtime with the native Metal PICA foundation
+        run: cmake --build build-ios-metal --target three_ds_recomp_runtime --parallel 4

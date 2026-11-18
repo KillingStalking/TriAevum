@@ -1,7 +1,7 @@
 #pragma once
 // PICA scissor mode 1 (exclude) rasterizes everything outside a rectangle.
-// Vulkan has one scissor rectangle per draw, so the visible region becomes up
-// to four disjoint rectangles and the draw is submitted once per rectangle.
+// Metal and Vulkan expose one scissor rectangle per draw, so the visible region
+// becomes up to four disjoint rectangles and the draw is submitted once per rectangle.
 // Disjointness keeps blending and stencil at exactly one execution per
 // retained fragment.
 //

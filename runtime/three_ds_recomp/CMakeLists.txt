@@ -11,6 +11,11 @@ option(NON_PORTABLE "Build a non-portable version" OFF)
 option(DISABLE_DLL_LOADER "Disable dynamic library loading support" OFF)
 option(ENABLE_SCRIPTING "Enable TCC-based C mod compilation and scripting system" OFF)
 option(THREE_DS_RECOMP_FAST_DEV_LINK "Disable MSVC debug data and large linker PDBs for iterative builds" OFF)
+option(THREE_DS_RECOMP_ENABLE_METAL_PICA
+    "Build the native iOS PICA Metal shader and frame foundation" OFF)
+if(THREE_DS_RECOMP_ENABLE_METAL_PICA AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    message(FATAL_ERROR "THREE_DS_RECOMP_ENABLE_METAL_PICA is supported only for iOS targets")
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
     option(SIGN_LIBRARY "Enable xcode signing" OFF)
@@ -142,6 +147,9 @@ include(cmake/dependencies/common.cmake)
 # dependency targets (notably ImGui) have been created.
 if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
 	include(cmake/dependencies/ios.cmake)
+	if(THREE_DS_RECOMP_ENABLE_METAL_PICA)
+		include(cmake/dependencies/metal-pica.cmake)
+	endif()
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
@@ -458,10 +466,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     include(cmake/dependencies/mac.cmake)
 endif()
 
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
-    include(cmake/dependencies/ios.cmake)
-endif()
-
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     include(cmake/dependencies/linux.cmake)
 endif()
@@ -475,7 +479,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 # === Platform Specific Configuration ===
-if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+# The iOS toolchain must be selected before the top-level project() call.
+# Keep the legacy late bootstrap only for native Apple configurations that did
+# not provide a toolchain file; Windows-hosted cross builds always pass one.
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS" AND NOT CMAKE_TOOLCHAIN_FILE)
     include(cmake/ios-toolchain-populate.cmake)
 endif()
 

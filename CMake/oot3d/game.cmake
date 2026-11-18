@@ -286,7 +286,7 @@ target_sources(oot3d_native_game PRIVATE
     tools/oot3d/native_game_runtime/triaevum_data_routing.cpp
     tools/oot3d/native_game_runtime/triaevum_early_log.cpp
 )
-if(NOT ANDROID)
+if(NOT ANDROID AND OOT3D_ENABLE_VULKAN_RENDERER)
     # Forge's device pipeline job runs in the game executable (--pipeline-prepare):
     # NVIDIA's driver keeps pipeline-library parts in a per-application cache,
     # so parts the separate helper created were not reused by the game's first
