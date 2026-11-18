@@ -104,6 +104,8 @@ void GfxMetalPicaDisplayTransferCache::Clear() {
         if (texture != nullptr) texture->release();
     }
     mCapturedRenderTargets.clear();
+    mPinnedCapturedRenderTargets.clear();
+    mHasPinnedCaptureSet = false;
     mResidentBytes = 0;
     if (mPipeline != nullptr) {
         mPipeline->release();
@@ -115,6 +117,55 @@ void GfxMetalPicaDisplayTransferCache::Clear() {
     }
     mPresentPipelines.clear();
     mDevice = nullptr;
+}
+
+bool GfxMetalPicaDisplayTransferCache::SetPinnedCaptures(
+    uint64_t renderTargetNamespace,
+    std::span<const Renderer3ds::PicaTextureCopyReference> copies,
+    std::string* error) {
+    if (error != nullptr) error->clear();
+    if (renderTargetNamespace == 0U && !copies.empty()) {
+        SetError(error, "PICA Metal producer pins require a canonical render-target namespace");
+        return false;
+    }
+
+    std::set<CaptureKey> pinned;
+    for (const auto& copy : copies) {
+        const uint64_t end = uint64_t{copy.PhysicalAddress} + copy.ByteCount;
+        if (copy.CompletionId == 0U || copy.PhysicalAddress == 0U ||
+            copy.ByteCount == 0U || end > (uint64_t{1} << 32U)) {
+            SetError(error, "PICA Metal producer pin contains an invalid identity or byte range");
+            return false;
+        }
+        pinned.emplace(renderTargetNamespace, copy.CompletionId,
+                       copy.AfterDrawSubmissionId);
+    }
+
+    // The map owns the only long-lived reference to each immutable capture.
+    // Metal command buffers retain resources already encoded into their work,
+    // so dropping an unpinned cache reference cannot invalidate submitted GPU
+    // commands; the current plan remains the authority for future lookups.
+    for (auto it = mCapturedRenderTargets.begin();
+         it != mCapturedRenderTargets.end();) {
+        if (pinned.contains(it->first)) {
+            ++it;
+            continue;
+        }
+        MTL::Texture* texture = it->second;
+        if (texture != nullptr) {
+            const uint64_t bytes = uint64_t{texture->width()} *
+                texture->height() * 4U;
+            const size_t resident = bytes > std::numeric_limits<size_t>::max()
+                ? 0U : static_cast<size_t>(bytes);
+            mResidentBytes = resident <= mResidentBytes
+                ? mResidentBytes - resident : 0U;
+            texture->release();
+        }
+        it = mCapturedRenderTargets.erase(it);
+    }
+    mPinnedCapturedRenderTargets = std::move(pinned);
+    mHasPinnedCaptureSet = true;
+    return true;
 }
 
 bool GfxMetalPicaDisplayTransferCache::EnsurePipeline(
@@ -292,6 +343,11 @@ bool GfxMetalPicaDisplayTransferCache::CaptureRenderTarget(
         return false;
     }
     const CaptureKey key{renderTargetNamespace, completionId, afterDrawSubmissionId};
+    if (mHasPinnedCaptureSet &&
+        !mPinnedCapturedRenderTargets.contains(key)) {
+        SetError(error, "PICA Metal render-target producer is not pinned by the active texture plan");
+        return false;
+    }
     if (mCapturedRenderTargets.contains(key)) {
         SetError(error, "PICA Metal render-target producer identity was already captured");
         return false;
