@@ -289,7 +289,7 @@ def main() -> int:
             "fragmentShader->Shader->Function()" in metal_draw_executor and
             "resources.Prepare" in metal_draw_executor and
             "resources.VertexDescriptor()" in metal_draw_executor and
-            "pipeline.Create" in metal_draw_executor and
+            "transient->Create(" in metal_draw_executor and
             "renderTargetCache.Resolve" in metal_draw_executor and
             "GfxMetalPicaDrawEncoder::Encode" in metal_draw_executor and
             "colorPixelFormat" in metal_draw_executor_header,
