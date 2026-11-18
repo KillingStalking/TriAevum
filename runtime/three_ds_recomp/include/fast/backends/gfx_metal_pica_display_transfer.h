@@ -39,7 +39,6 @@ class GfxMetalPicaDisplayTransferCache {
     // Retain only immutable producer captures referenced by the current native
     // texture plan. An empty set is an explicit release of all prior captures.
     [[nodiscard]] bool SetPinnedCaptures(
-        uint64_t renderTargetNamespace,
         std::span<const Renderer3ds::PicaTextureCopyReference> copies,
         std::string* error = nullptr);
     [[nodiscard]] bool Submit(
@@ -103,7 +102,7 @@ class GfxMetalPicaDisplayTransferCache {
     std::map<uint64_t, MTL::RenderPipelineState*> mPresentPipelines;
     std::map<Key, Entry> mEntries;
     std::map<CaptureKey, MTL::Texture*> mCapturedRenderTargets;
-    std::set<CaptureKey> mPinnedCapturedRenderTargets;
+    std::set<uint64_t> mPinnedCompletionIds;
     bool mHasPinnedCaptureSet = false;
     size_t mResidentBytes = 0;
     size_t mBudgetBytes = kDefaultBudgetBytes;
