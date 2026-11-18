@@ -334,7 +334,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
         __IOS__
     )
 
-    set_xcode_property(${PROJECT_NAME} PRODUCT_BUNDLE_IDENTIFIER ${BUNDLE_ID} All)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BUNDLE_ID}"
+    )
 
     if(NOT SIGN_LIBRARY)
         set_target_properties(${PROJECT_NAME} PROPERTIES
